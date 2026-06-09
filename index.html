@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POE 寶石價格 (中英對照)</title>
+  <style>
+    :root {
+      --bg:          #0d1117;
+      --bg2:         #161b22;
+      --bg3:         #1c2230;
+      --border:      #30363d;
+      --gold:        #c8a85a;
+      --gold-light:  #e8c870;
+      --text:        #e6edf3;
+      --muted:       #8b949e;
+      --red:         #e05252;
+      --green:       #52c05a;
+      --blue:        #5299e0;
+      --purple:      #a088e0;
+      --white-gem:   #c8c8c8;
+      --corrupted:   #cc4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 10px 40px; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 10px;
+      position: sticky; top: 0; z-index: 200;
+    }
+    .header-title { display: flex; align-items: center; gap: 10px; }
+    .header-title h1 { font-size: 1.3rem; color: var(--gold); font-weight: 700; letter-spacing: .02em; }
+    .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .league-select {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 10px; border-radius: 6px; font-size: .88rem; cursor: pointer;
+    }
+    .league-select:focus { outline: none; border-color: var(--gold); }
+    .update-info { font-size: .92rem; color: var(--muted); }
+    .refresh-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 5px 12px; border-radius: 6px; font-size: .96rem; cursor: pointer;
+      transition: all .15s;
+    }
+    .refresh-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── FILTERS ── */
+    .filters {
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 10px 40px; display: flex; flex-direction: column; gap: 8px;
+      position: sticky; top: 50px; z-index: 190;
+    }
+    .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-label { font-size: .92rem; color: var(--muted); min-width: 42px; }
+    .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+    .fbtn {
+      padding: 5px 14px; border: 1px solid var(--border); background: var(--bg3);
+      color: var(--muted); border-radius: 20px; font-size: .94rem; cursor: pointer;
+      transition: all .15s; user-select: none;
+    }
+    .fbtn:hover { border-color: var(--gold); color: var(--text); }
+    .fbtn.active { background: var(--gold); border-color: var(--gold); color: #111; font-weight: 700; }
+    .fbtn.c-red.active  { background: var(--red);   border-color: var(--red);   color: #fff; }
+    .fbtn.c-green.active{ background: var(--green); border-color: var(--green); color: #111; }
+    .fbtn.c-blue.active { background: var(--blue);  border-color: var(--blue);  color: #fff; }
+    .search-wrap { margin-left: auto; }
+    .search-input {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 14px; border-radius: 20px; font-size: .98rem; width: 260px; outline: none;
+      transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--gold); }
+    .search-input::placeholder { color: var(--muted); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      padding: 6px 40px; font-size: .94rem; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* ── TABLE ── */
+    body { overflow-x: auto; }
+    .table-wrap { padding: 0 40px 20px; max-width: 1400px; margin: 0 auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 1rem; }
+    thead th {
+      background: var(--bg2); color: var(--muted); padding: 7px 8px;
+      text-align: left; font-weight: 500; font-size: .88rem;
+      text-transform: uppercase; letter-spacing: .05em;
+      border-bottom: 2px solid var(--border);
+      position: sticky; top: var(--thead-top, 0px); white-space: nowrap; user-select: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,.4);
+    }
+    thead th.sort { cursor: pointer; }
+    thead th.sort:hover { color: var(--gold); }
+    thead th.sort-asc::after  { content: ' ↑'; color: var(--gold); }
+    thead th.sort-desc::after { content: ' ↓'; color: var(--gold); }
+    td { padding: 5px 8px; border-bottom: 1px solid rgba(48,54,61,.45); vertical-align: middle; }
+    /* 名稱欄限制寬度 */
+    td.name-col { max-width: 260px; min-width: 180px; }
+    /* 通貨欄置右 */
+    td.val-price, th.val-price { text-align: right; white-space: nowrap; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* gem icon */
+    .gem-icon { width: 30px; height: 30px; object-fit: contain; display: block; }
+
+    /* name cell */
+    .name-cell { display: flex; align-items: center; gap: 8px; }
+    .gem-names { display: flex; flex-direction: column; gap: 1px; }
+    .gem-zh { font-weight: 500; color: var(--text); }
+    .gem-en { font-size: .76rem; color: var(--muted); }
+    .copy-btn {
+      flex-shrink: 0; background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 2px 8px; border-radius: 4px;
+      font-size: .72rem; cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .copy-btn.ok    { border-color: var(--green); color: var(--green); }
+
+    /* badges */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 12px;
+      font-size: .72rem; font-weight: 600; white-space: nowrap;
+    }
+    .badge-Awakened    { background: rgba(200,168,90,.15); color: var(--gold);    border: 1px solid rgba(200,168,90,.35); }
+    .badge-Vaal        { background: rgba(200,60,60,.15);  color: #e07070;        border: 1px solid rgba(200,60,60,.35);  }
+    .badge-Transfigured{ background: rgba(120,80,200,.15); color: var(--purple);  border: 1px solid rgba(120,80,200,.35); }
+    .badge-Normal      { background: rgba(100,100,100,.1); color: var(--muted);   border: 1px solid var(--border);        }
+
+    .color-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+    .dot-red   { background: var(--red); }
+    .dot-green { background: var(--green); }
+    .dot-blue  { background: var(--blue); }
+    .dot-white { background: var(--white-gem); }
+
+    .variant-tag {
+      background: rgba(80,80,100,.3); border: 1px solid rgba(80,80,100,.5);
+      border-radius: 4px; padding: 1px 6px; font-size: .72rem; color: var(--muted);
+    }
+
+    .val-divine { color: var(--gold-light); font-weight: 600; display:inline-block; min-width:64px; text-align:right; font-variant-numeric: tabular-nums; }
+    .val-chaos  { color: var(--muted); display:inline-block; min-width:80px; text-align:right; font-variant-numeric: tabular-nums; }
+    .price-sep  { color: var(--border); margin: 0 4px; }
+    .orb-icon { width:18px; height:18px; vertical-align:middle; margin-left:5px; }
+    .medium-conf { color: #f0b429; font-size: 1em; margin-right: 3px; cursor:default; title:"Medium Confidence（樣本數 5–9）"; }
+    .medium-conf::before { content: '⚠ '; }
+    .val-chaos  { color: var(--text); }
+    .corrupted  { color: var(--corrupted); font-weight: 700; }
+    .not-corr   { color: var(--muted); }
+    .trend-up   { color: var(--green); font-size: 1rem; font-weight: 600; }
+    .trend-dn   { color: var(--red);   font-size: 1rem; font-weight: 600; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 18px; flex-wrap: wrap; }
+    .pg-btn {
+      padding: 5px 12px; border: 1px solid var(--border); background: var(--bg3);
+      color: var(--muted); border-radius: 6px; cursor: pointer; font-size: .82rem; transition: all .15s;
+    }
+    .pg-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #111; font-weight: 700; }
+    .pg-btn:disabled { opacity: .35; cursor: default; }
+    .pg-dots { color: var(--muted); padding: 0 4px; }
+
+    /* ── LOADING / EMPTY ── */
+    .center-msg { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); font-size: 1rem; gap: 10px; }
+    .spinner { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin .75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .filters { top: 46px; }
+      thead th { top: 110px; }
+      .hide-sm { display: none; }
+      .search-wrap { margin-left: 0; width: 100%; }
+      .search-input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-title">
+    <img src="image/Portal_(skill_gem)_inventory_icon.png" style="width:28px;height:28px;object-fit:contain">
+    <h1>POE 寶石價格 (中英對照)</h1>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:.8rem;color:var(--muted)">聯賽</label>
+      <select id="leagueSelect" class="league-select" onchange="onLeagueChange()">
+        <option>載入中…</option>
+      </select>
+    </div>
+    <span class="update-info" id="updateInfo">—</span>
+    <button class="refresh-btn" onclick="loadGems()">🔄 重新整理</button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">類型</span>
+    <div class="btn-group" id="typeGroup">
+      <button class="fbtn active" data-t="All"              onclick="setType(this)">全部</button>
+      <button class="fbtn"        data-t="Awakened"         onclick="setType(this)">覺醒</button>
+      <button class="fbtn"        data-t="Non-transfigured" onclick="setType(this)">非變異</button>
+      <button class="fbtn"        data-t="Normal"           onclick="setType(this)">一般</button>
+      <button class="fbtn"        data-t="Transfigured"     onclick="setType(this)">變異</button>
+      <button class="fbtn"        data-t="Vaal"             onclick="setType(this)">汙染</button>
+    </div>
+    <div class="btn-group" id="supportGroup" style="margin-left:8px;padding-left:12px;border-left:1px solid var(--border)">
+      <button class="fbtn active" data-s="All"     onclick="setSupport(this)">全部</button>
+      <button class="fbtn"        data-s="support" onclick="setSupport(this)">輔助</button>
+      <button class="fbtn"        data-s="active"  onclick="setSupport(this)">非輔助</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">等級</span>
+    <div class="btn-group" id="levelGroup">
+      <button class="fbtn active" data-lv="All" onclick="setLevel(this)">全部</button>
+      <button class="fbtn" data-lv="1"  onclick="setLevel(this)">1</button>
+      <button class="fbtn" data-lv="3"  onclick="setLevel(this)">3</button>
+      <button class="fbtn" data-lv="4"  onclick="setLevel(this)">4</button>
+      <button class="fbtn" data-lv="20" onclick="setLevel(this)">20</button>
+      <button class="fbtn" data-lv="21" onclick="setLevel(this)">21</button>
+    </div>
+    <span class="filter-label" style="margin-left:16px">品質</span>
+    <div class="btn-group" id="qualityGroup">
+      <button class="fbtn active" data-q="All"  onclick="setQuality(this)">全部</button>
+      <button class="fbtn"        data-q="low"  onclick="setQuality(this)">0~19</button>
+      <button class="fbtn"        data-q="20"   onclick="setQuality(this)">20%</button>
+      <button class="fbtn"        data-q="23"   onclick="setQuality(this)">23%</button>
+    </div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">顏色</span>
+    <div class="btn-group" id="colorGroup">
+      <button class="fbtn active"  data-c="All"   onclick="setColor(this)">全部</button>
+      <button class="fbtn c-red"   data-c="red"   onclick="setColor(this)">力量</button>
+      <button class="fbtn c-green" data-c="green" onclick="setColor(this)">敏捷</button>
+      <button class="fbtn c-blue"  data-c="blue"  onclick="setColor(this)">智慧</button>
+    </div>
+    <div class="search-wrap" style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <button id="lowConfBtn" class="fbtn" onclick="toggleLowConf()" title="顯示市場資料不足的寶石（poe.ninja Low Confidence）">低信心資料</button>
+      <input id="searchInput" class="search-input" type="text" placeholder="🔍 搜尋寶石（中文 / EN）" oninput="onSearch()">
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <span id="statsText">載入中…</span>
+  <span id="pageInfo" style="color:var(--muted);font-size:.78rem"></span>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+  <div id="tableArea">
+    <div class="center-msg"><div class="spinner"></div>正在載入寶石資料…</div>
+  </div>
+</div>
+
+<!-- PAGINATION -->
+<div class="pagination" id="pagination"></div>
+
+<script>
+// ════════════════════════════════════════════
+// STATIC GEM LOOKUP  (from 寶石_中英對照表.csv)
+// ════════════════════════════════════════════
+const GL = {
+"Absolution":{"zh":"赦免","c":"red"},
+"Absolution of Inspiring":{"zh":"赦免．啟發","c":"red"},
+"Added Chaos Damage Support":{"zh":"附加混沌傷害輔助","c":"blue"},
+"Added Cold Damage Support":{"zh":"附加冰冷傷害輔助","c":"green"},
+"Added Fire Damage Support":{"zh":"附加火燄傷害輔助","c":"red"},
+"Added Lightning Damage Support":{"zh":"附加閃電傷害輔助","c":"blue"},
+"Additional Accuracy Support":{"zh":"額外命中輔助","c":"green"},
+"Advanced Traps Support":{"zh":"進階陷阱輔助","c":"green"},
+"Alchemist's Mark":{"zh":"煉金術士印記","c":"green"},
+"Ambush":{"zh":"伏擊","c":"red"},
+"Ancestral Call Support":{"zh":"先祖怒嚎輔助","c":"red"},
+"Ancestral Cry":{"zh":"先祖戰吼","c":"red"},
+"Anger":{"zh":"憤怒","c":"red"},
+"Animate Guardian":{"zh":"幻化守衛","c":"red"},
+"Animate Guardian of Smiting":{"zh":"幻化守衛．重擊","c":"red"},
+"Animate Weapon":{"zh":"幻化武器","c":"green"},
+"Animate Weapon of Ranged Arms":{"zh":"幻化武器．遠程","c":"green"},
+"Animate Weapon of Self Reflection":{"zh":"幻化武器．反射","c":"green"},
+"Annihilation Support":{"zh":"湮滅輔助","c":"red"},
+"Arc":{"zh":"電弧","c":"blue"},
+"Arc of Oscillating":{"zh":"電弧．震盪","c":"blue"},
+"Arc of Surging":{"zh":"電弧．波動","c":"blue"},
+"Arcane Cloak":{"zh":"秘能披風","c":"blue"},
+"Arcane Surge Support":{"zh":"秘能波動輔助","c":"blue"},
+"Arcanist Brand":{"zh":"奧術烙印","c":"blue"},
+"Archmage Support":{"zh":"魔幻輔助","c":"blue"},
+"Arctic Armour":{"zh":"極地裝甲","c":"green"},
+"Armageddon Brand":{"zh":"末日烙印","c":"blue"},
+"Armageddon Brand of Recall":{"zh":"末日烙印．呼喚","c":"blue"},
+"Armageddon Brand of Volatility":{"zh":"末日烙印．揮發","c":"blue"},
+"Arrogance Support":{"zh":"傲慢輔助","c":"red"},
+"Arrow Nova Support":{"zh":"箭矢新星輔助","c":"green"},
+"Artillery Ballista":{"zh":"火砲砲塔","c":"green"},
+"Artillery Ballista of Cross Strafe":{"zh":"火砲砲塔 ．掃射","c":"green"},
+"Artillery Ballista of Focus Fire":{"zh":"火砲砲塔 ．集火","c":"green"},
+"Assassin's Mark":{"zh":"刺客印記","c":"blue"},
+"Autoexertion":{"zh":"自動竭盡","c":"red"},
+"Automation":{"zh":"自動化","c":"blue"},
+"Awakened Empower Support":{"zh":"覺醒．增幅輔助","c":"green"},
+"Awakened Enhance Support":{"zh":"覺醒．賦予輔助","c":"red"},
+"Awakened Enlighten Support":{"zh":"覺醒．啟蒙輔助","c":"blue"},
+"Ball Lightning":{"zh":"天雷之珠","c":"blue"},
+"Ball Lightning of Orbiting":{"zh":"天雷之珠．軌跡","c":"blue"},
+"Ball Lightning of Static":{"zh":"天雷之珠．靜電","c":"blue"},
+"Ballista Totem Support":{"zh":"砲塔圖騰輔助","c":"red"},
+"Bane":{"zh":"災厄","c":"blue"},
+"Bane of Condemnation":{"zh":"災厄．譴責","c":"blue"},
+"Barrage":{"zh":"彈幕","c":"green"},
+"Barrage of Volley Fire":{"zh":"彈幕．齊射","c":"green"},
+"Barrage Support":{"zh":"彈幕輔助","c":"green"},
+"Battlemage's Cry":{"zh":"戰法戰吼","c":"red"},
+"Bear Trap":{"zh":"捕熊陷阱","c":"green"},
+"Bear Trap of Skewers":{"zh":"捕熊陷阱．串燒","c":"green"},
+"Behead Support":{"zh":"斬首輔助","c":"red"},
+"Berserk":{"zh":"狂戰","c":"red"},
+"Blade Blast":{"zh":"劍刃爆破","c":"green"},
+"Blade Blast of Dagger Detonation":{"zh":"劍刃爆破．匕首爆炸","c":"green"},
+"Blade Blast of Unloading":{"zh":"劍刃爆破．卸載","c":"green"},
+"Blade Flurry":{"zh":"刀鋒亂舞","c":"green"},
+"Blade Flurry of Incision":{"zh":"刀鋒亂舞．切割","c":"green"},
+"Blade Trap":{"zh":"刀鋒陷阱","c":"green"},
+"Blade Trap of Greatswords":{"zh":"刀鋒陷阱．巨劍","c":"green"},
+"Blade Trap of Laceration":{"zh":"刀鋒陷阱．撕裂","c":"green"},
+"Blade Vortex":{"zh":"飛刃風暴","c":"green"},
+"Blade Vortex of the Scythe":{"zh":"飛刃風暴．鐮刀","c":"green"},
+"Bladefall":{"zh":"虛空刀雨","c":"green"},
+"Bladefall of Impaling":{"zh":"虛空刀雨．穿刺","c":"green"},
+"Bladefall of Trarthus":{"zh":"特拉特斯虛空刀雨","c":"green"},
+"Bladefall of Volleys":{"zh":"虛空刀雨．齊射","c":"green"},
+"Bladestorm":{"zh":"旋天劍舞","c":"red"},
+"Bladestorm of Uncertainty":{"zh":"旋天劍舞．未知","c":"red"},
+"Blasphemy Support":{"zh":"詛咒光環輔助","c":"blue"},
+"Blast Rain":{"zh":"爆裂箭雨","c":"green"},
+"Blast Rain of Trarthus":{"zh":"特拉特斯爆裂箭雨","c":"green"},
+"Blastchain Mine Support":{"zh":"連鎖爆破地雷輔助","c":"blue"},
+"Blazing Salvo":{"zh":"熾熱魔炮","c":"blue"},
+"Blessed Call Support":{"zh":"禮贈呼喚輔助","c":"red"},
+"Blight":{"zh":"萎滅","c":"blue"},
+"Blight of Atrophy":{"zh":"萎滅．萎縮","c":"blue"},
+"Blight of Contagion":{"zh":"萎滅．瘟疫","c":"blue"},
+"Blind Support":{"zh":"致盲輔助","c":"green"},
+"Blink Arrow":{"zh":"閃現射擊","c":"green"},
+"Blink Arrow of Bombarding Clones":{"zh":"閃現射擊．炸彈客","c":"green"},
+"Blink Arrow of Prismatic Clones":{"zh":"閃現射擊．神秘客","c":"green"},
+"Block Chance Reduction Support":{"zh":"減少格擋率輔助","c":"green"},
+"Blood and Sand":{"zh":"血腥沙戮","c":"red"},
+"Blood Rage":{"zh":"鮮血狂怒","c":"green"},
+"Bloodlust Support":{"zh":"嗜血輔助","c":"red"},
+"Bloodsoaked Banner Support":{"zh":"浸血鬥旗輔助","c":"red"},
+"Bloodthirst Support":{"zh":"渴血輔助","c":"red"},
+"Bodyswap":{"zh":"屍術傳送","c":"blue"},
+"Bodyswap of Sacrifice":{"zh":"屍術傳送．獻祭","c":"blue"},
+"Bone Offering":{"zh":"骸骨奉獻","c":"blue"},
+"Bonechill Support":{"zh":"寒冰刺骨輔助","c":"blue"},
+"Boneshatter":{"zh":"碎骨","c":"red"},
+"Boneshatter of Carnage":{"zh":"碎骨．屠殺","c":"red"},
+"Boneshatter of Complex Trauma":{"zh":"碎骨．創傷","c":"red"},
+"Bonespire Support":{"zh":"骨刺輔助","c":"red"},
+"Brand Recall":{"zh":"烙印呼喚","c":"blue"},
+"Brutality Support":{"zh":"殘虐輔助","c":"red"},
+"Burning Arrow":{"zh":"燃燒箭矢","c":"green"},
+"Burning Arrow of Vigour":{"zh":"燃燒箭矢．活力","c":"green"},
+"Burning Damage Support":{"zh":"燃燒傷害輔助","c":"red"},
+"Cast On Critical Strike Support":{"zh":"暴擊時施放輔助","c":"green"},
+"Cast on Death Support":{"zh":"死亡時施放輔助","c":"green"},
+"Cast on Melee Kill Support":{"zh":"近戰擊殺時施放輔助","c":"red"},
+"Cast on Ward Break Support":{"zh":"保護破碎時施放輔助","c":"green"},
+"Cast when Damage Taken Support":{"zh":"受傷時施放輔助","c":"red"},
+"Cast when Stunned Support":{"zh":"暈眩時施放輔助","c":"green"},
+"Cast while Channelling Support":{"zh":"引導時施放輔助","c":"blue"},
+"Caustic Arrow":{"zh":"腐蝕箭矢","c":"green"},
+"Caustic Arrow of Poison":{"zh":"腐蝕箭矢．中毒","c":"green"},
+"Chain Hook":{"zh":"奪魂勾索","c":"red"},
+"Chain Hook of Trarthus":{"zh":"特拉特斯奪魂勾索","c":"red"},
+"Chain Support":{"zh":"連鎖輔助","c":"green"},
+"Chance to Bleed Support":{"zh":"機率流血輔助","c":"red"},
+"Chance to Flee Support":{"zh":"機率逃跑輔助","c":"green"},
+"Chance to Poison Support":{"zh":"機率中毒輔助","c":"green"},
+"Charged Dash":{"zh":"雷霆衝鋒","c":"green"},
+"Charged Dash of Projection":{"zh":"雷霆衝鋒．投射","c":"green"},
+"Charged Mines Support":{"zh":"地雷充能輔助","c":"blue"},
+"Charged Traps Support":{"zh":"陷阱充能輔助","c":"green"},
+"Clarity":{"zh":"清晰","c":"blue"},
+"Cleave":{"zh":"劈砍","c":"red"},
+"Cleave of Rage":{"zh":"劈砍．盛怒","c":"red"},
+"Close Combat Support":{"zh":"近身戰輔助","c":"green"},
+"Cluster Traps Support":{"zh":"散彈陷阱輔助","c":"green"},
+"Cobra Lash":{"zh":"毒蛇鞭笞","c":"green"},
+"Cold Penetration Support":{"zh":"冰冷穿透輔助","c":"green"},
+"Cold Snap":{"zh":"霜暴","c":"blue"},
+"Cold Snap of Power":{"zh":"霜暴．暴擊","c":"blue"},
+"Cold to Fire Support":{"zh":"寒冰轉烈焰輔助","c":"red"},
+"Combustion Support":{"zh":"燃燒輔助","c":"blue"},
+"Companionship Support":{"zh":"羈絆輔助","c":"green"},
+"Concentrated Effect Support":{"zh":"集中效應輔助","c":"blue"},
+"Conductivity":{"zh":"導電","c":"blue"},
+"Conflagration":{"zh":"燎原箭矢","c":"green"},
+"Congregation Support":{"zh":"聚眾輔助","c":"blue"},
+"Consecrated Path":{"zh":"奉獻之路","c":"red"},
+"Consecrated Path of Endurance":{"zh":"奉獻之路．持久","c":"red"},
+"Contagion":{"zh":"瘟疫","c":"blue"},
+"Contagion of Subsiding":{"zh":"瘟疫．消退","c":"blue"},
+"Contagion of Transference":{"zh":"瘟疫．移轉","c":"blue"},
+"Controlled Blaze Support":{"zh":"精準烈火輔助","c":"red"},
+"Controlled Destruction Support":{"zh":"精準破壞輔助","c":"blue"},
+"Conversion Trap":{"zh":"迷魅陷阱","c":"blue"},
+"Convocation":{"zh":"號召","c":"white"},
+"Cooldown Recovery Support":{"zh":"冷卻恢復輔助","c":"blue"},
+"Corrupting Cry Support":{"zh":"汙染戰吼輔助","c":"red"},
+"Corrupting Fever":{"zh":"腐化潮","c":"red"},
+"Crackling Lance":{"zh":"碎雷電閃","c":"blue"},
+"Crackling Lance of Branching":{"zh":"碎雷電閃．分支","c":"blue"},
+"Crackling Lance of Disintegration":{"zh":"碎雷電閃．毀滅","c":"blue"},
+"Creeping Frost":{"zh":"寒霜滲透","c":"blue"},
+"Creeping Frost of Floes":{"zh":"寒霜滲透．浮冰","c":"blue"},
+"Cremation":{"zh":"熔炎送葬","c":"green"},
+"Cremation of Exhuming":{"zh":"熔炎送葬．深掘","c":"green"},
+"Cremation of the Volcano":{"zh":"熔炎送葬．火山","c":"green"},
+"Critical Strike Affliction Support":{"zh":"暴擊苦痛輔助","c":"green"},
+"Cruelty Support":{"zh":"殘酷輔助","c":"red"},
+"Crushing Fist":{"zh":"粉碎之拳","c":"red"},
+"Cull the Weak Support":{"zh":"弱者撲殺輔助","c":"green"},
+"Culling Strike Support":{"zh":"撲殺輔助","c":"green"},
+"Cursed Ground Support":{"zh":"詛咒地面輔助","c":"blue"},
+"Cyclone":{"zh":"旋風斬","c":"green"},
+"Cyclone of Tumult":{"zh":"旋風斬．騷動","c":"green"},
+"Damage on Full Life Support":{"zh":"滿血傷害輔助","c":"red"},
+"Dark Pact":{"zh":"暗夜血契","c":"blue"},
+"Dark Pact of Trarthus":{"zh":"特拉特斯暗夜血契","c":"blue"},
+"Dash":{"zh":"幻步","c":"green"},
+"Deadly Ailments Support":{"zh":"致命異常輔助","c":"green"},
+"Decay Support":{"zh":"腐化輔助","c":"blue"},
+"Decoy Totem":{"zh":"誘餌圖騰","c":"red"},
+"Defiance Banner":{"zh":"反抗之旗","c":"red"},
+"Desecrate":{"zh":"褻瀆","c":"green"},
+"Despair":{"zh":"絕望","c":"blue"},
+"Destructive Link":{"zh":"連結：破壞","c":"blue"},
+"Determination":{"zh":"堅定","c":"red"},
+"Detonate Dead":{"zh":"屍體爆破","c":"green"},
+"Detonate Dead of Chain Reaction":{"zh":"屍體爆破．連鎖","c":"green"},
+"Detonate Dead of Scavenging":{"zh":"屍體爆破．清洗","c":"green"},
+"Detonate Mines":{"zh":"引爆地雷","c":"white"},
+"Devour Support":{"zh":"吞噬輔助","c":"blue"},
+"Devouring Totem":{"zh":"吞噬圖騰","c":"red"},
+"Discharge":{"zh":"解放","c":"blue"},
+"Discharge of Misery":{"zh":"解放．苦痛","c":"blue"},
+"Discipline":{"zh":"紀律","c":"blue"},
+"Divine Blast":{"zh":"神聖爆破","c":"red"},
+"Divine Ire":{"zh":"聖怒","c":"blue"},
+"Divine Ire of Disintegration":{"zh":"聖怒．毀滅","c":"blue"},
+"Divine Ire of Holy Lightning":{"zh":"聖怒．雷神","c":"blue"},
+"Divine Retribution":{"zh":"神聖制裁","c":"blue"},
+"Divine Sentinel Support":{"zh":"聖潔守望輔助","c":"red"},
+"Dominating Blow":{"zh":"霸氣之擊","c":"red"},
+"Dominating Blow of Inspiring":{"zh":"霸氣之擊．啟發","c":"red"},
+"Double Strike":{"zh":"雙重打擊","c":"green"},
+"Double Strike of Impaling":{"zh":"雙重打擊．穿刺","c":"green"},
+"Double Strike of Momentum":{"zh":"雙重打擊．氣勢","c":"green"},
+"Dread Banner":{"zh":"恐懼之旗","c":"red"},
+"Dual Strike":{"zh":"雙持打擊","c":"green"},
+"Dual Strike of Ambidexterity":{"zh":"雙持打擊．靈活","c":"green"},
+"Earthquake":{"zh":"震地","c":"red"},
+"Earthquake of Amplification":{"zh":"震地．增幅","c":"red"},
+"Earthshatter":{"zh":"碎地重擊","c":"red"},
+"Earthshatter of Fragility":{"zh":"碎地重擊．易碎","c":"red"},
+"Earthshatter of Prominence":{"zh":"碎地重擊．卓越","c":"red"},
+"Eclipse Support":{"zh":"朔望輔助","c":"blue"},
+"Efficacy Support":{"zh":"效能輔助","c":"blue"},
+"Eldritch Blasphemy Support":{"zh":"異界詛咒光環輔助","c":"blue"},
+"Elemental Army Support":{"zh":"元素軍隊輔助","c":"blue"},
+"Elemental Damage with Attacks Support":{"zh":"元素攻擊傷害輔助","c":"red"},
+"Elemental Focus Support":{"zh":"元素集中輔助","c":"blue"},
+"Elemental Hit":{"zh":"元素打擊","c":"green"},
+"Elemental Hit of the Spectrum":{"zh":"元素打擊．光譜","c":"green"},
+"Elemental Penetration Support":{"zh":"元素穿透輔助","c":"blue"},
+"Elemental Proliferation Support":{"zh":"元素擴散輔助","c":"blue"},
+"Elemental Weakness":{"zh":"元素要害","c":"blue"},
+"Empower Support":{"zh":"增幅輔助","c":"green"},
+"Endurance Charge on Melee Stun Support":{"zh":"近戰擊暈獲得耐力球輔助","c":"red"},
+"Enduring Cry":{"zh":"堅決戰吼","c":"red"},
+"Energy Blade":{"zh":"能量之刃","c":"blue"},
+"Energy Leech Support":{"zh":"能量偷取輔助","c":"blue"},
+"Enfeeble":{"zh":"衰弱","c":"blue"},
+"Enhance Support":{"zh":"賦予輔助","c":"red"},
+"Enlighten Support":{"zh":"啟蒙輔助","c":"blue"},
+"Ensnaring Arrow":{"zh":"誘捕箭矢","c":"green"},
+"Essence Drain":{"zh":"靈魂吸取","c":"blue"},
+"Essence Drain of Desperation":{"zh":"靈魂吸取．絕望","c":"blue"},
+"Essence Drain of Wickedness":{"zh":"靈魂吸取．邪惡","c":"blue"},
+"Eternal Blessing Support":{"zh":"永恆祝福輔助","c":"red"},
+"Ethereal Knives":{"zh":"虛空匕首","c":"green"},
+"Ethereal Knives of Lingering Blades":{"zh":"虛空匕首．餘刃","c":"green"},
+"Ethereal Knives of the Massacre":{"zh":"虛空匕首．屠殺","c":"green"},
+"Eviscerate":{"zh":"剔骨","c":"red"},
+"Excommunicate Support":{"zh":"放逐輔助","c":"red"},
+"Exemplar Support":{"zh":"典範輔助","c":"blue"},
+"Expert Retaliation Support":{"zh":"專家復仇輔助","c":"red"},
+"Explosive Arrow":{"zh":"爆炸箭矢","c":"green"},
+"Explosive Concoction":{"zh":"爆裂物","c":"green"},
+"Explosive Concoction of Destruction":{"zh":"爆裂物．破壞","c":"green"},
+"Explosive Trap":{"zh":"爆裂陷阱","c":"green"},
+"Explosive Trap of Magnitude":{"zh":"爆裂陷阱．量級","c":"green"},
+"Explosive Trap of Shrapnel":{"zh":"爆裂陷阱．彈片","c":"green"},
+"Exsanguinate":{"zh":"抽血","c":"red"},
+"Exsanguinate of Transmission":{"zh":"抽血．傳染","c":"red"},
+"Eye of Winter":{"zh":"凜冬之眼","c":"blue"},
+"Eye of Winter of Finality":{"zh":"凜冬之眼．終結","c":"blue"},
+"Eye of Winter of Transience":{"zh":"凜冬之眼．轉瞬","c":"blue"},
+"Faster Attacks Support":{"zh":"快速攻擊輔助","c":"green"},
+"Faster Casting Support":{"zh":"快速施放輔助","c":"blue"},
+"Faster Projectiles Support":{"zh":"快速投射輔助","c":"green"},
+"Feeding Frenzy Support":{"zh":"豢養狂熱輔助","c":"blue"},
+"Fire Penetration Support":{"zh":"火焰穿透輔助","c":"red"},
+"Fire Trap":{"zh":"火焰陷阱","c":"green"},
+"Fire Trap of Blasting":{"zh":"火焰陷阱．爆發","c":"green"},
+"Fireball":{"zh":"火球","c":"blue"},
+"Firestorm":{"zh":"烈炎風暴","c":"blue"},
+"Firestorm of Meteors":{"zh":"烈炎風暴．隕石","c":"blue"},
+"Firestorm of Pelting":{"zh":"烈炎風暴．猛擲","c":"blue"},
+"Fissure Support":{"zh":"裂隙輔助","c":"red"},
+"Fist of War Support":{"zh":"拳霸輔助","c":"red"},
+"Flame Dash":{"zh":"烈焰衝刺","c":"blue"},
+"Flame Dash of Return":{"zh":"烈焰衝刺．返回","c":"blue"},
+"Flame Link":{"zh":"連結：烈焰","c":"red"},
+"Flame Surge":{"zh":"怒焰奔騰","c":"blue"},
+"Flame Surge of Combusting":{"zh":"怒焰奔騰．燃燒","c":"blue"},
+"Flame Wall":{"zh":"烈焰之牆","c":"blue"},
+"Flameblast":{"zh":"烈焰爆破","c":"blue"},
+"Flameblast of Celerity":{"zh":"烈焰爆破．迅速","c":"blue"},
+"Flameblast of Contraction":{"zh":"烈焰爆破．緊縮","c":"blue"},
+"Flamethrower Trap":{"zh":"噴火陷阱","c":"green"},
+"Flamethrower Trap of Stability":{"zh":"噴火陷阱．穩定","c":"green"},
+"Flamewood Support":{"zh":"焚木輔助","c":"red"},
+"Flammability":{"zh":"易燃","c":"blue"},
+"Flesh and Stone":{"zh":"血肉骸骨","c":"red"},
+"Flesh Offering":{"zh":"血肉奉獻","c":"blue"},
+"Flicker Strike":{"zh":"閃現打擊","c":"green"},
+"Flicker Strike of Power":{"zh":"閃現打擊．暴擊","c":"green"},
+"Focused Ballista Support":{"zh":"專注砲塔輔助","c":"green"},
+"Focused Channelling Support":{"zh":"專注引導輔助","c":"blue"},
+"Forbidden Rite":{"zh":"禁忌儀式","c":"blue"},
+"Forbidden Rite of Soul Sacrifice":{"zh":"禁忌儀式．靈魂獻祭","c":"blue"},
+"Fork Support":{"zh":"分裂輔助","c":"green"},
+"Fortify Support":{"zh":"護體輔助","c":"red"},
+"Foulgrasp Support":{"zh":"邪穢之握輔助","c":"blue"},
+"Freezing Pulse":{"zh":"冰霜脈衝","c":"blue"},
+"Frenzy":{"zh":"狂怒","c":"green"},
+"Frenzy of Onslaught":{"zh":"狂怒．猛攻","c":"green"},
+"Fresh Meat Support":{"zh":"鮮肉輔助","c":"blue"},
+"Frigid Bond Support":{"zh":"冰寒之繫輔助","c":"blue"},
+"Frost Blades":{"zh":"冰霜之刃","c":"green"},
+"Frost Blades of Katabasis":{"zh":"冰霜之刃．降臨","c":"green"},
+"Frost Bomb":{"zh":"寒霜爆","c":"blue"},
+"Frost Bomb of Forthcoming":{"zh":"寒霜爆．來臨","c":"blue"},
+"Frost Bomb of Instability":{"zh":"寒霜爆．不定","c":"blue"},
+"Frost Shield":{"zh":"寒霜護盾","c":"blue"},
+"Frost Wall":{"zh":"冰牆","c":"blue"},
+"Frostbite":{"zh":"凍傷","c":"blue"},
+"Frostblink":{"zh":"霜漣之瞬","c":"blue"},
+"Frostblink of Wintry Blast":{"zh":"霜漣之瞬．寒風","c":"blue"},
+"Frostbolt":{"zh":"寒冰彈","c":"blue"},
+"Frostmage Support":{"zh":"霜法輔助","c":"blue"},
+"Frozen Legion":{"zh":"戰亂．凍結","c":"red"},
+"Frozen Legion of Rallying":{"zh":"戰亂．凍結．號召","c":"red"},
+"Galvanic Arrow":{"zh":"電流箭矢","c":"green"},
+"Galvanic Arrow of Energy":{"zh":"電流箭矢．能量","c":"green"},
+"Galvanic Arrow of Surging":{"zh":"電流箭矢．波動","c":"green"},
+"Galvanic Field":{"zh":"電光領域","c":"blue"},
+"Galvanic Field of Intensity":{"zh":"電光領域．強度","c":"blue"},
+"General's Cry":{"zh":"將軍戰吼","c":"red"},
+"Generosity Support":{"zh":"和善輔助","c":"red"},
+"Glacial Cascade":{"zh":"冰川之刺","c":"blue"},
+"Glacial Cascade of the Fissure":{"zh":"冰川之刺．裂隙","c":"blue"},
+"Glacial Hammer":{"zh":"冰霜之錘","c":"red"},
+"Glacial Hammer of Shattering":{"zh":"冰霜之錘．粉碎","c":"red"},
+"Glacial Shield Swipe":{"zh":"冰川盾擊","c":"green"},
+"Gluttony Support":{"zh":"暴食輔助","c":"blue"},
+"Grace":{"zh":"優雅","c":"green"},
+"Greater Ancestral Call Support":{"zh":"高階先祖怒嚎輔助","c":"red"},
+"Greater Chain Support":{"zh":"高階連鎖輔助","c":"green"},
+"Greater Devour Support":{"zh":"高階吞噬輔助","c":"blue"},
+"Greater Fork Support":{"zh":"高階分裂輔助","c":"green"},
+"Greater Kinetic Instability Support":{"zh":"高階力量紊亂輔助","c":"blue"},
+"Greater Multiple Projectiles Support":{"zh":"高階多重投射輔助","c":"green"},
+"Greater Multistrike Support":{"zh":"高階多重打擊輔助","c":"red"},
+"Greater Spell Cascade Support":{"zh":"高階秘能爆發輔助","c":"blue"},
+"Greater Spell Echo Support":{"zh":"高階施放迴響輔助","c":"blue"},
+"Greater Unleash Support":{"zh":"高階釋放輔助","c":"blue"},
+"Greater Volley Support":{"zh":"高階齊射輔助","c":"green"},
+"Ground Slam":{"zh":"裂地之擊","c":"red"},
+"Ground Slam of Earthshaking":{"zh":"裂地之擊．地震","c":"red"},
+"Guardian's Blessing Support":{"zh":"守護者的祝福輔助","c":"red"},
+"Hallow Support":{"zh":"聖徒輔助","c":"red"},
+"Haste":{"zh":"迅捷","c":"green"},
+"Hatred":{"zh":"憎恨","c":"green"},
+"Heavy Strike":{"zh":"沉重之擊","c":"red"},
+"Heavy Strike of Trarthus":{"zh":"特拉特斯沉重之擊","c":"red"},
+"Herald of Agony":{"zh":"苦痛之捷","c":"green"},
+"Herald of Ash":{"zh":"灰燼之捷","c":"red"},
+"Herald of Ice":{"zh":"冰霜之捷","c":"green"},
+"Herald of Purity":{"zh":"純淨之捷","c":"red"},
+"Herald of Thunder":{"zh":"閃電之捷","c":"blue"},
+"Hex Bloom Support":{"zh":"咒術綻放輔助","c":"blue"},
+"Hexblast":{"zh":"咒術枯萎","c":"blue"},
+"Hexblast of Contradiction":{"zh":"咒術枯萎．矛盾","c":"blue"},
+"Hexblast of Havoc":{"zh":"咒術枯萎．浩劫","c":"blue"},
+"Hexpass Support":{"zh":"咒閃輔助","c":"blue"},
+"Hextoad Support":{"zh":"咒蟾輔助","c":"blue"},
+"Hextouch Support":{"zh":"咒術降臨輔助","c":"blue"},
+"High-Impact Mine Support":{"zh":"高能地雷輔助","c":"blue"},
+"Hiveborn Support":{"zh":"巢裔輔助","c":"blue"},
+"Holy Flame Totem":{"zh":"神聖火舌圖騰","c":"red"},
+"Holy Flame Totem of Ire":{"zh":"神聖火舌圖騰．怒火","c":"red"},
+"Holy Hammers":{"zh":"神聖之錘","c":"red"},
+"Holy Strike":{"zh":"神聖打擊","c":"red"},
+"Holy Sweep":{"zh":"神聖橫掃","c":"red"},
+"Hydrosphere":{"zh":"水弒界","c":"blue"},
+"Hypothermia Support":{"zh":"急凍輔助","c":"green"},
+"Ice Bite Support":{"zh":"霜咬輔助","c":"green"},
+"Ice Crash":{"zh":"寒冰衝擊","c":"red"},
+"Ice Crash of Cadence":{"zh":"寒冰衝擊．節奏","c":"red"},
+"Ice Nova":{"zh":"冰霜新星","c":"blue"},
+"Ice Nova of Deep Freeze":{"zh":"冰霜新星．深層冰凍","c":"blue"},
+"Ice Nova of Frostbolts":{"zh":"冰霜新星．寒冰彈","c":"blue"},
+"Ice Shot":{"zh":"冰霜射擊","c":"green"},
+"Ice Shot of Penetration":{"zh":"冰霜射擊 ．穿透","c":"green"},
+"Ice Spear":{"zh":"冰矛","c":"blue"},
+"Ice Spear of Splitting":{"zh":"冰矛．分裂","c":"blue"},
+"Ice Trap":{"zh":"冰凍陷阱","c":"green"},
+"Ice Trap of Hollowness":{"zh":"冰凍陷阱．空心","c":"green"},
+"Icicle Mine":{"zh":"冰雹地雷","c":"blue"},
+"Icicle Mine of Fanning":{"zh":"冰雹地雷．扇動","c":"blue"},
+"Icicle Mine of Sabotage":{"zh":"冰雹地雷．破壞","c":"blue"},
+"Ignite Proliferation Support":{"zh":"點燃擴散輔助","c":"blue"},
+"Immolate Support":{"zh":"犧牲輔助","c":"blue"},
+"Immortal Call":{"zh":"不朽怒嚎","c":"red"},
+"Impale Support":{"zh":"穿刺輔助","c":"green"},
+"Impending Doom Support":{"zh":"末日厄運輔助","c":"blue"},
+"Incinerate":{"zh":"燒毀","c":"blue"},
+"Incinerate of Expanse":{"zh":"燒毀．蔓延","c":"blue"},
+"Incinerate of Venting":{"zh":"燒毀．通風","c":"blue"},
+"Increased Area of Effect Support":{"zh":"增加範圍輔助","c":"blue"},
+"Increased Critical Damage Support":{"zh":"增加暴擊傷害輔助","c":"blue"},
+"Increased Critical Strikes Support":{"zh":"增加暴擊率輔助","c":"blue"},
+"Infernal Blow":{"zh":"煉獄之擊","c":"red"},
+"Infernal Blow of Immolation":{"zh":"煉獄之擊．自焚","c":"red"},
+"Infernal Cry":{"zh":"煉獄戰吼","c":"red"},
+"Infernal Legion Support":{"zh":"煉獄軍團輔助","c":"blue"},
+"Infused Channelling Support":{"zh":"注入引導輔助","c":"blue"},
+"Innervate Support":{"zh":"亢奮輔助","c":"blue"},
+"Inspiration Support":{"zh":"啟發輔助","c":"red"},
+"Intensify Support":{"zh":"強化輔助","c":"blue"},
+"Intimidating Cry":{"zh":"威嚇戰吼","c":"red"},
+"Intuitive Link":{"zh":"連結：直覺","c":"green"},
+"Invention Support":{"zh":"發明輔助","c":"green"},
+"Invert the Rules Support":{"zh":"規則逆反輔助","c":"blue"},
+"Iron Grip Support":{"zh":"鋼鐵之握輔助","c":"red"},
+"Iron Will Support":{"zh":"鋼鐵意志輔助","c":"red"},
+"Item Rarity Support":{"zh":"物品稀有度增幅輔助","c":"blue"},
+"Kinetic Blast":{"zh":"力量爆破","c":"blue"},
+"Kinetic Blast of Clustering":{"zh":"力量爆破．聚集","c":"blue"},
+"Kinetic Bolt":{"zh":"力量穿引","c":"blue"},
+"Kinetic Bolt of Fragmentation":{"zh":"力量穿引．碎片","c":"blue"},
+"Kinetic Fusillade":{"zh":"力量猛射","c":"blue"},
+"Kinetic Fusillade of Detonation":{"zh":"力量猛射．引爆","c":"blue"},
+"Kinetic Instability Support":{"zh":"力量紊亂輔助","c":"blue"},
+"Kinetic Rain":{"zh":"力量驟雨","c":"blue"},
+"Kinetic Rain of Impact":{"zh":"力量驟雨．衝擊","c":"blue"},
+"Knockback Support":{"zh":"擊退輔助","c":"red"},
+"Lacerate":{"zh":"破空斬","c":"green"},
+"Lacerate of Butchering":{"zh":"破空斬．屠宰","c":"green"},
+"Lacerate of Haemorrhage":{"zh":"破空斬．出血","c":"green"},
+"Lancing Steel":{"zh":"鋼之突刺","c":"green"},
+"Lancing Steel of Spraying":{"zh":"鋼之突刺．噴射","c":"green"},
+"Leap Slam":{"zh":"躍擊","c":"red"},
+"Leap Slam of Groundbreaking":{"zh":"躍擊．地破","c":"red"},
+"Less Duration Support":{"zh":"持續時間縮短輔助","c":"red"},
+"Lethal Dose Support":{"zh":"致命劑量輔助","c":"green"},
+"Life Gain on Hit Support":{"zh":"擊中生命回復輔助","c":"red"},
+"Life Leech Support":{"zh":"生命偷取輔助","c":"red"},
+"Lifetap Support":{"zh":"活栓輔助","c":"red"},
+"Lightning Arrow":{"zh":"閃電箭矢","c":"green"},
+"Lightning Arrow of Electrocution":{"zh":"閃電箭矢．電刑","c":"green"},
+"Lightning Conduit":{"zh":"導雷","c":"blue"},
+"Lightning Conduit of the Heavens":{"zh":"導雷．天堂","c":"blue"},
+"Lightning Penetration Support":{"zh":"閃電穿透輔助","c":"blue"},
+"Lightning Spire Trap":{"zh":"鋒雷陷阱","c":"blue"},
+"Lightning Spire Trap of Overloading":{"zh":"鋒雷陷阱．過載","c":"blue"},
+"Lightning Spire Trap of Zapping":{"zh":"鋒雷陷阱．殘喘","c":"blue"},
+"Lightning Strike":{"zh":"閃電打擊","c":"green"},
+"Lightning Strike of Arcing":{"zh":"閃電打擊．電弧","c":"green"},
+"Lightning Tendrils":{"zh":"電能釋放","c":"blue"},
+"Lightning Tendrils of Eccentricity":{"zh":"電能釋放．異變","c":"blue"},
+"Lightning Tendrils of Escalation":{"zh":"電能釋放．擴大","c":"blue"},
+"Lightning Trap":{"zh":"閃電陷阱","c":"blue"},
+"Lightning Trap of Sparking":{"zh":"閃電陷阱．電球","c":"blue"},
+"Lightning Warp":{"zh":"閃電傳送","c":"blue"},
+"Living Lightning Support":{"zh":"活體閃電輔助","c":"blue"},
+"Locus Mine Support":{"zh":"定位地雷輔助","c":"green"},
+"Machinations Support":{"zh":"詭計輔助","c":"green"},
+"Maim Support":{"zh":"癱瘓輔助","c":"red"},
+"Malevolence":{"zh":"惡意","c":"blue"},
+"Mana Leech Support":{"zh":"魔力偷取輔助","c":"green"},
+"Manabond":{"zh":"魔能束縛","c":"blue"},
+"Manaforged Arrows Support":{"zh":"魔改箭矢輔助","c":"green"},
+"Mark On Hit Support":{"zh":"擊中時印記輔助","c":"green"},
+"Meat Shield Support":{"zh":"肉盾輔助","c":"blue"},
+"Melee Physical Damage Support":{"zh":"近戰物理傷害輔助","c":"red"},
+"Melee Splash Support":{"zh":"近戰傷害擴散輔助","c":"red"},
+"Minefield Support":{"zh":"地雷網輔助","c":"blue"},
+"Minion Damage Support":{"zh":"召喚物傷害輔助","c":"blue"},
+"Minion Life Support":{"zh":"召喚物生命輔助","c":"blue"},
+"Minion Pact Support":{"zh":"召喚契約輔助","c":"blue"},
+"Minion Speed Support":{"zh":"召喚物速度輔助","c":"blue"},
+"Mirage Archer Support":{"zh":"幻影射手輔助","c":"green"},
+"Mirror Arrow":{"zh":"魅影射擊","c":"green"},
+"Mirror Arrow of Bombarding Clones":{"zh":"魅影射擊．炸彈客","c":"green"},
+"Mirror Arrow of Prismatic Clones":{"zh":"魅影射擊．神秘客","c":"green"},
+"Molten Shell":{"zh":"熔岩護盾","c":"red"},
+"Molten Strike":{"zh":"熔岩之擊","c":"red"},
+"Molten Strike of the Zenith":{"zh":"熔岩之擊．極盛","c":"red"},
+"Momentum Support":{"zh":"氣勢輔助","c":"green"},
+"More Duration Support":{"zh":"持續時間延長輔助","c":"red"},
+"Multiple Projectiles Support":{"zh":"多重投射物輔助","c":"green"},
+"Multiple Totems Support":{"zh":"多重圖騰輔助","c":"red"},
+"Multiple Traps Support":{"zh":"多重陷阱輔助","c":"green"},
+"Multistrike Support":{"zh":"多重打擊輔助","c":"red"},
+"Nightblade Support":{"zh":"夜刃輔助","c":"green"},
+"Orb of Storms":{"zh":"風暴漩渦","c":"blue"},
+"Orb of Storms of Squalls":{"zh":"風暴漩渦．颮風","c":"blue"},
+"Overcharge Support":{"zh":"超負荷輔助","c":"blue"},
+"Overexertion Support":{"zh":"竭盡全力輔助","c":"red"},
+"Overheat Support":{"zh":"過熱輔助","c":"red"},
+"Overloaded Intensity Support":{"zh":"超載強化輔助","c":"blue"},
+"Pacifism Support":{"zh":"和平輔助","c":"green"},
+"Penance Brand":{"zh":"贖罪烙印","c":"blue"},
+"Penance Brand of Conduction":{"zh":"贖罪烙印．傳導","c":"blue"},
+"Penance Brand of Dissipation":{"zh":"贖罪烙印．消散","c":"blue"},
+"Perforate":{"zh":"裂地刺穿","c":"red"},
+"Perforate of Bloodshed":{"zh":"裂地刺穿．流血","c":"red"},
+"Perforate of Duality":{"zh":"裂地刺穿．雙持","c":"red"},
+"Pestilent Strike":{"zh":"瘟疫打擊","c":"green"},
+"Petrified Blood":{"zh":"石化之血","c":"red"},
+"Phase Run":{"zh":"暗影迷蹤","c":"green"},
+"Physical to Lightning Support":{"zh":"物理轉閃電輔助","c":"blue"},
+"Pierce Support":{"zh":"穿透輔助","c":"green"},
+"Pinpoint Support":{"zh":"精確輔助","c":"blue"},
+"Plague Bearer":{"zh":"病疫之難","c":"green"},
+"Poacher's Mark":{"zh":"盜獵者印記","c":"green"},
+"Point Blank Support":{"zh":"零點射擊輔助","c":"green"},
+"Poisonous Concoction":{"zh":"毒藥","c":"green"},
+"Poisonous Concoction of Bouncing":{"zh":"毒藥 ．彈炸","c":"green"},
+"Portal":{"zh":"時空之門","c":"white"},
+"Power Charge On Critical Support":{"zh":"暴擊獲得暴擊球輔助","c":"blue"},
+"Power Siphon":{"zh":"力量抽取","c":"blue"},
+"Power Siphon of the Archmage":{"zh":"力量抽取．大法師","c":"blue"},
+"Precision":{"zh":"精準","c":"green"},
+"Predator Support":{"zh":"掠奪者輔助","c":"blue"},
+"Pride":{"zh":"驕傲","c":"red"},
+"Prismatic Burst Support":{"zh":"三相爆發輔助","c":"blue"},
+"Protective Link":{"zh":"連結：保護","c":"red"},
+"Pulverise Support":{"zh":"磨鍊輔助","c":"red"},
+"Puncture":{"zh":"放血","c":"green"},
+"Puncture of Shanking":{"zh":"腿脛放血","c":"green"},
+"Punishment":{"zh":"懲戒","c":"red"},
+"Purifying Flame":{"zh":"淨化烈焰","c":"blue"},
+"Purifying Flame of Revelations":{"zh":"淨化烈焰．啟示","c":"blue"},
+"Purity of Elements":{"zh":"元素淨化","c":"blue"},
+"Purity of Fire":{"zh":"火焰淨化","c":"red"},
+"Purity of Ice":{"zh":"冰霜淨化","c":"green"},
+"Purity of Lightning":{"zh":"閃電淨化","c":"blue"},
+"Pyre Support":{"zh":"火葬輔助","c":"red"},
+"Pyroclast Mine":{"zh":"炎爆新星地雷","c":"blue"},
+"Pyroclast Mine of Sabotage":{"zh":"炎爆新星地雷．破壞","c":"blue"},
+"Rage Support":{"zh":"盛怒輔助","c":"red"},
+"Rage Vortex":{"zh":"盛怒漩渦","c":"red"},
+"Rage Vortex of Berserking":{"zh":"盛怒漩渦．狂暴","c":"red"},
+"Rain of Arrows":{"zh":"箭雨","c":"green"},
+"Rain of Arrows of Artillery":{"zh":"箭雨．火炮","c":"green"},
+"Rain of Arrows of Saturation":{"zh":"箭雨．飽和","c":"green"},
+"Raise Spectre":{"zh":"喚醒幽魂","c":"blue"},
+"Raise Spectre of Transience":{"zh":"喚醒幽魂．轉瞬","c":"blue"},
+"Raise Zombie":{"zh":"殭屍復甦","c":"blue"},
+"Raise Zombie of Falling":{"zh":"殭屍復甦．殞落","c":"blue"},
+"Raise Zombie of Slamming":{"zh":"殭屍復甦．重擊","c":"blue"},
+"Rallying Cry":{"zh":"激勵戰吼","c":"red"},
+"Reap":{"zh":"收割","c":"red"},
+"Reave":{"zh":"衝擊波","c":"green"},
+"Reave of Refraction":{"zh":"衝擊波．折射","c":"green"},
+"Rejuvenation Totem":{"zh":"回春圖騰","c":"red"},
+"Returning Projectiles Support":{"zh":"投射物返回輔助","c":"green"},
+"Righteous Fire":{"zh":"正義之火","c":"blue"},
+"Righteous Fire of Arcane Devotion":{"zh":"正義之火．秘能奉獻","c":"blue"},
+"Rolling Magma":{"zh":"熔岩翻騰","c":"blue"},
+"Rupture Support":{"zh":"殘破輔助","c":"green"},
+"Ruthless Support":{"zh":"殘暴輔助","c":"red"},
+"Sacred Wisps Support":{"zh":"聖潔妖精輔助","c":"blue"},
+"Sacrifice Support":{"zh":"獻祭輔助","c":"blue"},
+"Sadism Support":{"zh":"虐待輔助","c":"green"},
+"Scorching Ray":{"zh":"熾灼奔流","c":"blue"},
+"Scorching Ray of Immolation":{"zh":"熾灼奔流．焚燒","c":"blue"},
+"Scornful Herald Support":{"zh":"輕蔑先鋒輔助","c":"blue"},
+"Scourge Arrow":{"zh":"天譴之箭","c":"green"},
+"Scourge Arrow of Menace":{"zh":"天譴之箭．威脅","c":"green"},
+"Searing Bond":{"zh":"灼熱連結","c":"red"},
+"Searing Bond of Detonation":{"zh":"灼熱連結．引爆","c":"red"},
+"Second Wind Support":{"zh":"恢復輔助","c":"green"},
+"Seismic Cry":{"zh":"裂地戰吼","c":"red"},
+"Seismic Trap":{"zh":"地裂陷阱","c":"green"},
+"Seismic Trap of Swells":{"zh":"地裂陷阱．膨脹","c":"green"},
+"Shattering Steel":{"zh":"鋼之碎擊","c":"green"},
+"Shattering Steel of Ammunition":{"zh":"鋼之碎擊．彈藥","c":"green"},
+"Shield Charge":{"zh":"重盾衝鋒","c":"red"},
+"Shield Crush":{"zh":"重盾粉碎","c":"red"},
+"Shield Crush of the Chieftain":{"zh":"重盾粉碎．酋長","c":"red"},
+"Shield of Light":{"zh":"聖光盾擊","c":"red"},
+"Shock Nova":{"zh":"閃電新星","c":"blue"},
+"Shock Nova of Procession":{"zh":"閃電新星．行進","c":"blue"},
+"Shockwave Support":{"zh":"震波輔助","c":"red"},
+"Shockwave Totem":{"zh":"震波圖騰","c":"red"},
+"Shockwave Totem of Authority":{"zh":"震波圖騰．威權","c":"red"},
+"Shrapnel Ballista":{"zh":"彈片砲塔","c":"green"},
+"Shrapnel Ballista of Steel":{"zh":"彈片砲塔．鋼鐵","c":"green"},
+"Siege Ballista":{"zh":"攻城炮台","c":"green"},
+"Siege Ballista of Splintering":{"zh":"攻城炮台．碎片","c":"green"},
+"Siege Ballista of Trarthus":{"zh":"特拉特斯攻城炮台","c":"green"},
+"Sigil of Power":{"zh":"咒符之力","c":"blue"},
+"Siphoning Trap":{"zh":"虹吸陷阱","c":"blue"},
+"Siphoning Trap of Pain":{"zh":"虹吸陷阱．苦痛","c":"blue"},
+"Slower Projectiles Support":{"zh":"投射物減速輔助","c":"green"},
+"Smite":{"zh":"雷鳴重擊","c":"red"},
+"Smite of Divine Judgement":{"zh":"雷鳴重擊．聖判","c":"red"},
+"Smoke Mine":{"zh":"煙霧地雷","c":"green"},
+"Snipe":{"zh":"狙擊","c":"green"},
+"Sniper's Mark":{"zh":"狙擊者印記","c":"green"},
+"Somatic Shell":{"zh":"心靈壁壘","c":"blue"},
+"Soul Link":{"zh":"連結：靈魂","c":"blue"},
+"Soulrend":{"zh":"靈體撕裂","c":"blue"},
+"Soulrend of Reaping":{"zh":"靈體撕裂．收割","c":"blue"},
+"Soulrend of the Spiral":{"zh":"靈體撕裂．螺旋","c":"blue"},
+"Spark":{"zh":"電球","c":"blue"},
+"Spark of the Nova":{"zh":"電球．新星","c":"blue"},
+"Spark of Unpredictability":{"zh":"電球．未知","c":"blue"},
+"Spectral Helix":{"zh":"靈體旋武","c":"green"},
+"Spectral Helix of Trarthus":{"zh":"特拉特斯靈體旋武","c":"green"},
+"Spectral Shield Throw":{"zh":"盾靈投擲","c":"green"},
+"Spectral Shield Throw of Shattering":{"zh":"盾靈投擲．粉碎","c":"green"},
+"Spectral Shield Throw of Trarthus":{"zh":"特拉特斯盾靈投擲","c":"green"},
+"Spectral Throw":{"zh":"靈體投擲","c":"green"},
+"Spectral Throw of Materialising":{"zh":"靈體投擲．具現化","c":"green"},
+"Spectral Throw of Trarthus":{"zh":"特拉特斯靈體投擲","c":"green"},
+"Spell Cascade Support":{"zh":"秘能爆發輔助","c":"blue"},
+"Spell Echo Support":{"zh":"施放迴響輔助","c":"blue"},
+"Spell Totem Support":{"zh":"法術圖騰輔助","c":"red"},
+"Spellblade Support":{"zh":"魔刃輔助","c":"blue"},
+"Spellslinger":{"zh":"法術回音","c":"blue"},
+"Spirit Offering":{"zh":"靈魂奉獻","c":"blue"},
+"Split Arrow":{"zh":"分裂箭矢","c":"green"},
+"Split Arrow of Splitting":{"zh":"分裂箭矢．分裂","c":"green"},
+"Splitting Steel":{"zh":"鋼之裂化","c":"green"},
+"Splitting Steel of Ammunition":{"zh":"鋼之裂化．彈藥","c":"green"},
+"Static Strike":{"zh":"充能打擊","c":"red"},
+"Static Strike of Gathering Lightning":{"zh":"充能打擊．聚雷","c":"red"},
+"Steelskin":{"zh":"鋼筋鐵骨","c":"red"},
+"Storm Brand":{"zh":"風暴烙印","c":"blue"},
+"Storm Brand of Indecision":{"zh":"風暴烙印．躊躇","c":"blue"},
+"Storm Burst":{"zh":"風爆","c":"blue"},
+"Storm Burst of Repulsion":{"zh":"風爆．排斥","c":"blue"},
+"Storm Call":{"zh":"風暴呼喚","c":"blue"},
+"Storm Call of Trarthus":{"zh":"特拉特斯風暴呼喚","c":"blue"},
+"Storm Rain":{"zh":"暴風雷雨","c":"green"},
+"Storm Rain of the Conduit":{"zh":"暴風雷雨．導管","c":"green"},
+"Storm Rain of the Fence":{"zh":"暴風雷雨．籬笆","c":"green"},
+"Stormbind":{"zh":"風暴術符","c":"blue"},
+"Stormbind of Teleportation":{"zh":"風暴術符．傳送","c":"blue"},
+"Stormblast Mine":{"zh":"風暴地雷","c":"blue"},
+"Stun Support":{"zh":"擊暈輔助","c":"red"},
+"Summon Carrion Golem":{"zh":"召喚食腐魔像","c":"blue"},
+"Summon Carrion Golem of Hordes":{"zh":"召喚食腐魔像．部落","c":"blue"},
+"Summon Carrion Golem of Scavenging":{"zh":"召喚食腐魔像．清洗","c":"blue"},
+"Summon Chaos Golem":{"zh":"召喚混沌魔像","c":"blue"},
+"Summon Chaos Golem of Hordes":{"zh":"召喚混沌魔像．部落","c":"blue"},
+"Summon Chaos Golem of the Maelström":{"zh":"召喚混沌魔像．漩渦","c":"blue"},
+"Summon Flame Golem":{"zh":"召喚烈焰魔像","c":"red"},
+"Summon Flame Golem of Hordes":{"zh":"召喚烈焰魔像．部落","c":"red"},
+"Summon Flame Golem of the Meteor":{"zh":"召喚烈焰魔像．隕石","c":"red"},
+"Summon Holy Relic":{"zh":"召喚聖物","c":"blue"},
+"Summon Holy Relic of Conviction":{"zh":"召喚聖物．信念","c":"blue"},
+"Summon Ice Golem":{"zh":"召喚寒冰魔像","c":"green"},
+"Summon Ice Golem of Hordes":{"zh":"召喚寒冰魔像．部落","c":"green"},
+"Summon Ice Golem of Shattering":{"zh":"召喚寒冰魔像．粉碎","c":"green"},
+"Summon Lightning Golem":{"zh":"召喚閃電魔像","c":"blue"},
+"Summon Lightning Golem of Hordes":{"zh":"召喚閃電魔像．部落","c":"blue"},
+"Summon Phantasm Support":{"zh":"召喚幻影輔助","c":"blue"},
+"Summon Raging Spirit":{"zh":"召喚憤怒狂靈","c":"blue"},
+"Summon Raging Spirit of Enormity":{"zh":"召喚憤怒狂靈．巨型","c":"blue"},
+"Summon Reaper":{"zh":"召喚奪魂鐮","c":"blue"},
+"Summon Reaper of Eviscerating":{"zh":"召喚奪魂鐮．剜剖","c":"blue"},
+"Summon Reaper of Revenants":{"zh":"召喚奪魂鐮．亡靈","c":"blue"},
+"Summon Skeletons":{"zh":"召喚骷髏","c":"blue"},
+"Summon Skeletons of Archers":{"zh":"召喚骷髏．箭術","c":"blue"},
+"Summon Skeletons of Mages":{"zh":"召喚骷髏．巫術","c":"blue"},
+"Summon Skitterbots":{"zh":"召喚探測機獸","c":"blue"},
+"Summon Stone Golem":{"zh":"召喚巨石魔像","c":"red"},
+"Summon Stone Golem of Hordes":{"zh":"召喚巨石魔像．部落","c":"red"},
+"Summon Stone Golem of Safeguarding":{"zh":"召喚巨石魔像．保安","c":"red"},
+"Sunder":{"zh":"大地震擊","c":"red"},
+"Sunder of Earthbreaking":{"zh":"大地震擊．地破","c":"red"},
+"Sunder of Trarthus":{"zh":"特拉特斯大地震擊","c":"red"},
+"Swift Affliction Support":{"zh":"極速苦痛輔助","c":"green"},
+"Swift Assembly Support":{"zh":"迅速組裝輔助","c":"green"},
+"Swiftbrand Support":{"zh":"迅速烙印輔助","c":"blue"},
+"Swordstorm":{"zh":"劍刃風暴","c":"red"},
+"Tectonic Slam":{"zh":"破體之擊","c":"red"},
+"Tectonic Slam of Cataclysm":{"zh":"破體之擊．災變","c":"red"},
+"Tempest Shield":{"zh":"暴風之盾","c":"blue"},
+"Temporal Chains":{"zh":"時空鎖鏈","c":"green"},
+"Temporal Rift":{"zh":"時空裂隙","c":"green"},
+"Thunderstorm":{"zh":"天雷暴雨","c":"green"},
+"Tornado":{"zh":"龍捲風","c":"green"},
+"Tornado of Elemental Turbulence":{"zh":"龍捲風 ．湍流","c":"green"},
+"Tornado Shot":{"zh":"龍捲射擊","c":"green"},
+"Tornado Shot of Cloudburst":{"zh":"龍捲射擊．雲爆","c":"green"},
+"Toxic Rain":{"zh":"腐蝕毒雨","c":"green"},
+"Toxic Rain of Sporeburst":{"zh":"腐蝕毒雨．爆發","c":"green"},
+"Toxic Rain of Withering":{"zh":"腐蝕毒雨．凋零","c":"green"},
+"Transfusion Support":{"zh":"輸血輔助","c":"red"},
+"Trap and Mine Damage Support":{"zh":"陷阱及地雷傷害輔助","c":"green"},
+"Trap Support":{"zh":"陷阱輔助","c":"green"},
+"Trauma Support":{"zh":"創傷輔助","c":"red"},
+"Trinity Support":{"zh":"三體輔助","c":"blue"},
+"Unbound Ailments Support":{"zh":"無邊異能輔助","c":"blue"},
+"Unearth":{"zh":"屍術矢","c":"green"},
+"Unholy Trinity Support":{"zh":"不潔三體輔助","c":"green"},
+"Unleash Support":{"zh":"釋放輔助","c":"blue"},
+"Urgent Orders Support":{"zh":"緊急詔令輔助","c":"red"},
+"Vaal Absolution":{"zh":"瓦爾．赦免","c":"red"},
+"Vaal Animate Weapon":{"zh":"瓦爾．幻化武器","c":"green"},
+"Vaal Arc":{"zh":"瓦爾．電弧","c":"blue"},
+"Vaal Arctic Armour":{"zh":"瓦爾．極地裝甲","c":"green"},
+"Vaal Blade Flurry":{"zh":"瓦爾．刀鋒亂舞","c":"green"},
+"Vaal Blade Vortex":{"zh":"瓦爾．飛刃風暴","c":"green"},
+"Vaal Blight":{"zh":"瓦爾．萎滅","c":"blue"},
+"Vaal Burning Arrow":{"zh":"瓦爾．燃燒箭矢","c":"green"},
+"Vaal Caustic Arrow":{"zh":"瓦爾．腐蝕箭矢","c":"green"},
+"Vaal Clarity":{"zh":"瓦爾．清晰","c":"blue"},
+"Vaal Cleave":{"zh":"瓦爾．劈砍","c":"red"},
+"Vaal Cold Snap":{"zh":"瓦爾．霜暴","c":"blue"},
+"Vaal Cyclone":{"zh":"瓦爾．旋風斬","c":"green"},
+"Vaal Detonate Dead":{"zh":"瓦爾．屍體爆破","c":"green"},
+"Vaal Discipline":{"zh":"瓦爾．紀律","c":"blue"},
+"Vaal Domination":{"zh":"瓦爾．霸氣","c":"red"},
+"Vaal Double Strike":{"zh":"瓦爾．雙重打擊","c":"green"},
+"Vaal Earthquake":{"zh":"瓦爾．震地","c":"red"},
+"Vaal Fireball":{"zh":"瓦爾．火球","c":"blue"},
+"Vaal Firestorm":{"zh":"瓦爾．烈炎風暴","c":"blue"},
+"Vaal Flameblast":{"zh":"瓦爾．烈焰爆破","c":"blue"},
+"Vaal Flicker Strike":{"zh":"瓦爾．閃現打擊","c":"green"},
+"Vaal Glacial Hammer":{"zh":"瓦爾．冰霜之錘","c":"green"},
+"Vaal Grace":{"zh":"瓦爾．優雅","c":"green"},
+"Vaal Ground Slam":{"zh":"瓦爾．裂地之擊","c":"red"},
+"Vaal Haste":{"zh":"瓦爾．迅捷","c":"green"},
+"Vaal Ice Nova":{"zh":"瓦爾．冰霜新星","c":"blue"},
+"Vaal Ice Shot":{"zh":"瓦爾．冰霜射擊","c":"green"},
+"Vaal Impurity of Fire":{"zh":"瓦爾．不淨之火","c":"red"},
+"Vaal Impurity of Ice":{"zh":"瓦爾．不淨之冰","c":"green"},
+"Vaal Impurity of Lightning":{"zh":"瓦爾．不淨之雷","c":"blue"},
+"Vaal Lightning Arrow":{"zh":"瓦爾．閃電箭矢","c":"green"},
+"Vaal Lightning Strike":{"zh":"瓦爾．閃電打擊","c":"green"},
+"Vaal Lightning Trap":{"zh":"瓦爾．閃電陷阱","c":"blue"},
+"Vaal Molten Shell":{"zh":"瓦爾．熔岩護盾","c":"red"},
+"Vaal Molten Strike":{"zh":"瓦爾．熔岩之擊","c":"red"},
+"Vaal Power Siphon":{"zh":"瓦爾．力量抽取","c":"blue"},
+"Vaal Rain of Arrows":{"zh":"瓦爾．箭雨","c":"green"},
+"Vaal Reap":{"zh":"瓦爾．收割","c":"red"},
+"Vaal Reave":{"zh":"瓦爾．衝擊波","c":"green"},
+"Vaal Rejuvenation Totem":{"zh":"瓦爾．回春圖騰","c":"red"},
+"Vaal Righteous Fire":{"zh":"瓦爾．正義之火","c":"blue"},
+"Vaal Sacrifice Support":{"zh":"瓦爾犧牲輔助","c":"blue"},
+"Vaal Smite":{"zh":"瓦爾．雷鳴重擊","c":"red"},
+"Vaal Spark":{"zh":"瓦爾．電球","c":"blue"},
+"Vaal Spectral Throw":{"zh":"瓦爾．靈體投擲","c":"green"},
+"Vaal Storm Call":{"zh":"瓦爾．風暴呼喚","c":"blue"},
+"Vaal Summon Skeletons":{"zh":"瓦爾．召喚骷髏","c":"blue"},
+"Vaal Temptation Support":{"zh":"瓦爾誘惑輔助","c":"red"},
+"Vaal Venom Gyre":{"zh":"瓦爾．猛毒迴旋","c":"green"},
+"Vaal Volcanic Fissure":{"zh":"瓦爾．炎火脈動","c":"red"},
+"Vampiric Link":{"zh":"連結：吸血","c":"green"},
+"Vengeful Cry":{"zh":"復仇之嚎","c":"red"},
+"Venom Gyre":{"zh":"猛毒迴旋","c":"green"},
+"Vicious Projectiles Support":{"zh":"猛毒投射物輔助","c":"green"},
+"Vigilant Strike":{"zh":"戒備打擊","c":"red"},
+"Vile Toxins Support":{"zh":"罪惡毒素輔助","c":"green"},
+"Viper Strike":{"zh":"毒蛇打擊","c":"green"},
+"Viper Strike of the Mamba":{"zh":"毒蛇打擊．曼巴","c":"green"},
+"Vitality":{"zh":"活力","c":"red"},
+"Void Manipulation Support":{"zh":"虛空操縱輔助","c":"green"},
+"Void Shockwave Support":{"zh":"虛空震波輔助","c":"red"},
+"Void Sphere":{"zh":"虛無玉","c":"blue"},
+"Void Sphere of Rending":{"zh":"虛無玉．分裂","c":"blue"},
+"Voidstorm Support":{"zh":"虛空風暴輔助","c":"green"},
+"Volatile Dead":{"zh":"致命之息","c":"green"},
+"Volatile Dead of Confinement":{"zh":"致命之息．禁閉","c":"green"},
+"Volatile Dead of Seething":{"zh":"致命之息．沸騰","c":"green"},
+"Volatility Support":{"zh":"易變輔助","c":"red"},
+"Volcanic Fissure":{"zh":"炎火脈動","c":"red"},
+"Volcanic Fissure of Snaking":{"zh":"炎火脈動．蜿蜒","c":"red"},
+"Volley Support":{"zh":"齊射輔助","c":"green"},
+"Voltaxic Burst":{"zh":"魔痕爆發","c":"blue"},
+"Vortex":{"zh":"漩渦","c":"blue"},
+"Vortex of Projection":{"zh":"漩渦．投射","c":"blue"},
+"Vulnerability":{"zh":"脆弱","c":"red"},
+"Wall of Force":{"zh":"力量之壁","c":"blue"},
+"War Banner":{"zh":"戰爭之旗","c":"red"},
+"Warlord's Mark":{"zh":"督軍印記","c":"red"},
+"Wave of Conviction":{"zh":"信念浪湧","c":"blue"},
+"Wave of Conviction of Trarthus":{"zh":"特拉特斯信念浪湧","c":"blue"},
+"Whirling Blades":{"zh":"迴旋之刃","c":"green"},
+"Wild Strike":{"zh":"野性打擊","c":"green"},
+"Wild Strike of Extremes":{"zh":"野性打擊．極致","c":"green"},
+"Windburst Support":{"zh":"風破輔助","c":"green"},
+"Winter Orb":{"zh":"凜冬之球","c":"blue"},
+"Wintertide Brand":{"zh":"冬潮烙印","c":"blue"},
+"Wither":{"zh":"死亡凋零","c":"blue"},
+"Withering Step":{"zh":"凋零之步","c":"green"},
+"Withering Touch Support":{"zh":"凋零之觸輔助","c":"green"},
+"Wrath":{"zh":"雷霆","c":"blue"},
+"Zealotry":{"zh":"狂熱","c":"blue"}
+};
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+let allGems = [], filteredGems = [], nameSet = new Set();
+let currentLeague = '';
+let typeFilter = 'All', colorFilter = 'All', supportFilter = 'All', searchQuery = '';
+let levelFilter = 'All', qualityFilter = 'All';
+let showLowConf = false;
+let sortKey = 'divineValue', sortDir = 'desc';
+let currentPage = 1;
+const PAGE_SIZE = 100;
+
+// ════════════════════════════════════════════
+// CLASSIFY
+// ════════════════════════════════════════════
+function classify(name) {
+  if (name.startsWith('Awakened ')) return 'Awakened';
+  if (name.startsWith('Vaal '))     return 'Vaal';
+  if (name.includes(' of ')) {
+    const i = name.lastIndexOf(' of ');
+    if (nameSet.has(name.substring(0, i))) return 'Transfigured';
+  }
+  return 'Normal';
+}
+
+// ════════════════════════════════════════════
+// API  (CORS proxy 解決跨域限制)
+// ════════════════════════════════════════════
+// Cloudflare Worker proxy（自架，解決 poe.ninja CORS 問題）
+const WORKER_BASE = 'https://poe-gems-proxy.motorrockqoo.workers.dev';
+
+async function apiFetch(poeNinjaPath) {
+  const url = WORKER_BASE + poeNinjaPath;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status} from worker`);
+  return r.json();
+}
+
+async function fetchLeagues() {
+  try {
+    const d = await apiFetch('/poe1/api/data/index-state');
+    const leagues = d.economyLeagues || [];
+    const sel = document.getElementById('leagueSelect');
+    sel.innerHTML = leagues.map(l =>
+      `<option value="${l.name}">${l.displayName || l.name}</option>`
+    ).join('');
+    currentLeague = leagues[0]?.name || 'Mirage';
+    sel.value = currentLeague;
+  } catch(e) { console.error('League fetch failed', e); }
+}
+
+async function loadGems() {
+  document.getElementById('tableArea').innerHTML =
+    '<div class="center-msg"><div class="spinner"></div>正在載入寶石資料…</div>';
+  document.getElementById('statsText').textContent = '載入中…';
+  document.getElementById('pagination').innerHTML = '';
+
+  try {
+    const d = await apiFetch(`/poe1/api/economy/stash/current/item/overview?type=SkillGem&league=${encodeURIComponent(currentLeague)}`);
+
+    nameSet = new Set(d.lines.map(g => g.name));
+
+allGems = d.lines.map(g => {
+      const lu = GL[g.name] || {};
+      const cnt = g.count ?? 0;
+      const lowConf    = cnt < 5;
+      const mediumConf = cnt >= 5 && cnt < 10;
+      const isSupport = g.name.includes('Support');
+      return { ...g, zh: lu.zh || g.name, color: lu.c || 'white', gemType: classify(g.name), lowConf, mediumConf, isSupport };
+    });
+
+    document.getElementById('updateInfo').textContent =
+      '更新：' + new Date().toLocaleTimeString('zh-TW');
+    currentPage = 1;
+    applyFilters();
+  } catch(e) {
+    document.getElementById('tableArea').innerHTML =
+      `<div class="center-msg" style="flex-direction:column;gap:8px">
+         <span style="font-size:1.4rem">⚠️</span>
+         <span>載入失敗</span>
+         <span style="font-size:.78rem;color:var(--muted)">錯誤：${e.name} — ${e.message}</span>
+         <span style="font-size:.72rem;color:var(--muted)">請開啟 F12 → Console 查看詳細錯誤</span>
+       </div>`;
+    console.error('[loadGems error]', e);
+  }
+}
+
+// ════════════════════════════════════════════
+// FILTER + SORT
+// ════════════════════════════════════════════
+function applyFilters() {
+  const q = searchQuery.toLowerCase();
+  filteredGems = allGems.filter(g => {
+    // type
+    if (typeFilter === 'Non-transfigured' && g.gemType === 'Transfigured') return false;
+    if (typeFilter !== 'All' && typeFilter !== 'Non-transfigured' && g.gemType !== typeFilter) return false;
+    // color
+    if (colorFilter !== 'All' && g.color !== colorFilter) return false;
+    // support
+    if (supportFilter === 'support' && !g.isSupport) return false;
+    if (supportFilter === 'active'  &&  g.isSupport) return false;
+    // level / quality
+    if (levelFilter !== 'All' && String(g.gemLevel??'') !== levelFilter) return false;
+    if (qualityFilter === 'low') {
+      if (g.gemQuality != null && g.gemQuality >= 20) return false;
+    } else if (qualityFilter !== 'All') {
+      if (String(g.gemQuality??'') !== qualityFilter) return false;
+    }
+    // low confidence
+    if (!showLowConf && g.lowConf) return false;
+    // search
+    if (q && !g.name.toLowerCase().includes(q) && !g.zh.includes(searchQuery)) return false;
+    return true;
+  });
+
+  // sort
+  filteredGems.sort((a, b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+    va = va ?? -Infinity; vb = vb ?? -Infinity;
+    return va < vb ? (sortDir==='asc'?-1:1) : va > vb ? (sortDir==='asc'?1:-1) : 0;
+  });
+
+  document.getElementById('statsText').textContent =
+    `共 ${filteredGems.length.toLocaleString()} 筆（總計 ${allGems.length.toLocaleString()} 筆）`;
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+}
+
+// ════════════════════════════════════════════
+// RENDER TABLE
+// ════════════════════════════════════════════
+const TYPE_ZH  = { Awakened:'覺醒', Vaal:'汙染', Transfigured:'變異', Normal:'一般' };
+const COLOR_ZH = { red:'力量', green:'敏捷', blue:'智慧', white:'通用' };
+
+function thHtml(label, key) {
+  const cls = sortKey === key ? (sortDir==='asc' ? ' sort-asc' : ' sort-desc') : '';
+  return `<th class="sort${cls}" onclick="setSort('${key}')">${label}</th>`;
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filteredGems.slice(start, start + PAGE_SIZE);
+
+  if (!page.length) {
+    document.getElementById('tableArea').innerHTML =
+      '<div class="center-msg">😮 找不到符合條件的寶石</div>';
+    document.getElementById('pageInfo').textContent = '';
+    return;
+  }
+
+  let rows = '';
+  for (const g of page) {
+    const div    = g.divineValue  != null ? g.divineValue.toFixed(2)            : '—';
+    const chaos  = g.chaosValue   != null ? Math.round(g.chaosValue).toLocaleString() : '—';
+    const trend  = g.sparkLine?.totalChange;
+    const tHtml  = trend && trend !== 0
+      ? `<span class="${trend>0?'trend-up':'trend-dn'}">&nbsp;${trend>0?'▲':'▼'}${Math.abs(trend).toFixed(1)}%</span>`
+      : '';
+    const dotCls = `dot-${g.color==='white'?'white':g.color}`;
+
+    // escape quote for inline onclick
+    const zhSafe = g.zh.replace(/'/g, '&#39;');
+
+    rows += `<tr>
+      <td><img class="gem-icon" src="${g.icon}" alt="" loading="lazy" onerror="this.style.opacity=0"></td>
+      <td class="name-col">
+        <div class="name-cell">
+          <div class="gem-names">
+            <span class="gem-zh">${g.zh}</span>
+            <span class="gem-en">${g.name}</span>
+          </div>
+          <button class="copy-btn" onclick="doCopy(this,'${zhSafe}')">複製</button>
+        </div>
+      </td>
+      <td><span class="badge badge-${g.gemType}">${TYPE_ZH[g.gemType]||g.gemType}</span></td>
+      <td><span class="color-dot ${dotCls}" style="width:11px;height:11px;margin-right:7px"></span>${COLOR_ZH[g.color]||g.color}</td>
+      <td>${(g.gemLevel??'—') + '/' + (g.gemQuality!=null ? g.gemQuality : '—')}</td>
+      <td class="val-price">
+        ${g.mediumConf?'<span class="medium-conf" title="Medium Confidence（樣本數 5–9）"></span>':''}
+        <span class="val-divine">${div}</span><img src="image/Divine_Orb_inventory_icon.png" class="orb-icon" title="神聖石">
+        <span class="price-sep"> / </span>
+        <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
+      </td>
+      <td class="val-trend">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="hide-sm" style="color:var(--muted)">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
+    </tr>`;
+  }
+
+  const nameCls = (sortKey==='zh'?(sortDir==='asc'?' sort-asc':' sort-desc'):'');
+
+  document.getElementById('tableArea').innerHTML = `
+  <table>
+    <thead><tr>
+      <th>圖示</th>
+      <th class="sort${nameCls}" onclick="setSort('zh')">名稱</th>
+      <th>類型</th>
+      <th>顏色</th>
+      <th>Lv/Q</th>
+      <th class="sort val-price${sortKey==='divineValue'?(sortDir==='asc'?' sort-asc':' sort-desc'):''}" onclick="setSort('divineValue')">神聖石 / 混沌石</th>
+      <th>最近 7 天</th>
+      <th class="hide-sm">上架數</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  const end = Math.min(start + PAGE_SIZE, filteredGems.length);
+  document.getElementById('pageInfo').textContent =
+    `第 ${start+1}–${end} 筆，共 ${filteredGems.length.toLocaleString()} 筆`;
+}
+
+function thTd(v) { return `<td>${v}</td>`; }
+
+// ════════════════════════════════════════════
+// RENDER PAGINATION
+// ════════════════════════════════════════════
+function renderPagination() {
+  const total = Math.ceil(filteredGems.length / PAGE_SIZE);
+  if (total <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+
+  const pages = [];
+  for (let i = 1; i <= total; i++) {
+    if (i===1 || i===total || Math.abs(i-currentPage)<=2) pages.push(i);
+    else if (pages[pages.length-1] !== '…') pages.push('…');
+  }
+
+  let h = `<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ 上頁</button>`;
+  pages.forEach(p => {
+    if (p==='…') h += `<span class="pg-dots">…</span>`;
+    else h += `<button class="pg-btn${p===currentPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+  });
+  h += `<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>下頁 ›</button>`;
+  document.getElementById('pagination').innerHTML = h;
+}
+
+// ════════════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════════════
+function setType(btn) {
+  typeFilter = btn.dataset.t;
+  document.querySelectorAll('#typeGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function setColor(btn) {
+  colorFilter = btn.dataset.c;
+  document.querySelectorAll('#colorGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function onSearch() {
+  searchQuery = document.getElementById('searchInput').value;
+  currentPage = 1; applyFilters();
+}
+function setLevel(btn) {
+  levelFilter = btn.dataset.lv;
+  document.querySelectorAll('#levelGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function setQuality(btn) {
+  qualityFilter = btn.dataset.q;
+  document.querySelectorAll('#qualityGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function setSupport(btn) {
+  supportFilter = btn.dataset.s;
+  document.querySelectorAll('#supportGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function toggleLowConf() {
+  showLowConf = !showLowConf;
+  const btn = document.getElementById('lowConfBtn');
+  btn.classList.toggle('active', showLowConf);
+  currentPage = 1; applyFilters();
+}
+function setSort(key) {
+  if (sortKey === key) sortDir = sortDir==='asc'?'desc':'asc';
+  else { sortKey = key; sortDir = 'desc'; }
+  applyFilters();
+}
+function goPage(p) {
+  const total = Math.ceil(filteredGems.length / PAGE_SIZE);
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  renderTable(); renderPagination();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function onLeagueChange() {
+  currentLeague = document.getElementById('leagueSelect').value;
+  loadGems();
+}
+async function doCopy(btn, text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch { /* fallback */ const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t); }
+  btn.textContent = '✓ 已複製'; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = '複製'; btn.classList.remove('ok'); }, 1500);
+}
+
+// ════════════════════════════════════════════
+// STICKY THEAD — 動態計算 top 偏移
+// ════════════════════════════════════════════
+function updateStickyTop() {
+  const header  = document.querySelector('.header');
+  const filters = document.querySelector('.filters');
+  if (!header || !filters) return;
+  const h = header.getBoundingClientRect().height + filters.getBoundingClientRect().height;
+  document.documentElement.style.setProperty('--thead-top', h + 'px');
+}
+window.addEventListener('load',   updateStickyTop);
+window.addEventListener('resize', updateStickyTop);
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+(async () => { await fetchLeagues(); await loadGems(); updateStickyTop(); })();
+</script>
+</body>
+</html>

@@ -110,13 +110,16 @@
 
     /* name cell */
     .name-cell { display: flex; align-items: center; gap: 8px; }
-    .gem-names { display: flex; flex-direction: column; gap: 1px; }
+    .gem-names { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+    .gem-zh { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gem-en { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gem-zh { font-weight: 500; color: var(--text); }
     .gem-en { font-size: .76rem; color: var(--muted); }
     .copy-btn {
-      flex-shrink: 0; background: none; border: 1px solid var(--border);
+      flex-shrink: 0; margin-left: auto; background: none; border: 1px solid var(--border);
       color: var(--muted); padding: 2px 8px; border-radius: 4px;
       font-size: .72rem; cursor: pointer; white-space: nowrap; transition: all .15s;
+      width: 52px; text-align: center;
     }
     .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
     .copy-btn.ok    { border-color: var(--green); color: var(--green); }
@@ -145,6 +148,10 @@
     .val-divine { color: var(--gold-light); font-weight: 600; display:inline-block; min-width:64px; text-align:right; font-variant-numeric: tabular-nums; }
     .val-chaos  { color: var(--muted); display:inline-block; min-width:80px; text-align:right; font-variant-numeric: tabular-nums; }
     .price-sep  { color: var(--border); margin: 0 4px; }
+    .val-lvq    { white-space: nowrap; }
+    .lvq-lv     { display:inline-block; min-width:24px; text-align:right; font-variant-numeric: tabular-nums; }
+    .lvq-sep    { color: var(--border); margin: 0 3px; }
+    .lvq-q      { display:inline-block; min-width:24px; text-align:right; font-variant-numeric: tabular-nums; }
     .orb-icon { width:18px; height:18px; vertical-align:middle; margin-left:5px; }
     .medium-conf { color: #f0b429; font-size: 1em; margin-right: 3px; cursor:default; title:"Medium Confidence（樣本數 5–9）"; }
     .medium-conf::before { content: '⚠ '; }
@@ -1219,14 +1226,14 @@ function renderTable() {
       </td>
       <td><span class="badge badge-${g.gemType}">${TYPE_ZH[g.gemType]||g.gemType}</span></td>
       <td><span class="color-dot ${dotCls}" style="width:11px;height:11px;margin-right:7px"></span>${COLOR_ZH[g.color]||g.color}</td>
-      <td>${(g.gemLevel??'—') + '/' + (g.gemQuality!=null ? g.gemQuality : '—')}</td>
+      <td class="val-lvq"><span class="lvq-lv">${g.gemLevel??'—'}</span><span class="lvq-sep"> / </span><span class="lvq-q">${g.gemQuality!=null ? g.gemQuality : '—'}</span></td>
       <td class="val-price">
         ${g.mediumConf?'<span class="medium-conf" title="Medium Confidence（樣本數 5–9）"></span>':''}
         <span class="val-divine">${div}</span><img src="image/Divine_Orb_inventory_icon.png" class="orb-icon" title="神聖石">
         <span class="price-sep"> / </span>
         <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
       </td>
-      <td class="val-trend">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="val-trend" style="text-align:right">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
       <td class="hide-sm" style="color:var(--muted)">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
     </tr>`;
   }

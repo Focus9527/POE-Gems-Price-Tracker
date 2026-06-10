@@ -96,8 +96,8 @@
     }
     thead th.sort { cursor: pointer; }
     thead th.sort:hover { color: var(--gold); }
-    thead th.sort-asc::after  { content: ' ↑'; color: var(--gold); }
-    thead th.sort-desc::after { content: ' ↓'; color: var(--gold); }
+    thead th.sort-asc::before  { content: '↑ '; color: var(--gold); }
+    thead th.sort-desc::before { content: '↓ '; color: var(--gold); }
     td { padding: 5px 8px; border-bottom: 1px solid rgba(48,54,61,.45); vertical-align: middle; }
     /* 名稱欄限制寬度 */
     td.name-col { max-width: 260px; min-width: 180px; }
@@ -148,7 +148,7 @@
     .val-divine { color: var(--gold-light); font-weight: 600; display:inline-block; min-width:64px; text-align:right; font-variant-numeric: tabular-nums; }
     .val-chaos  { color: var(--muted); display:inline-block; min-width:80px; text-align:right; font-variant-numeric: tabular-nums; }
     .price-sep  { color: var(--border); margin: 0 4px; }
-    .val-lvq    { white-space: nowrap; }
+    .val-lvq    { white-space: nowrap; text-align: right; }
     .lvq-lv     { display:inline-block; min-width:24px; text-align:right; font-variant-numeric: tabular-nums; }
     .lvq-sep    { color: var(--border); margin: 0 3px; }
     .lvq-q      { display:inline-block; min-width:24px; text-align:right; font-variant-numeric: tabular-nums; }
@@ -1309,7 +1309,7 @@ function renderTable() {
         <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
       </td>
       <td class="val-trend" style="text-align:right">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="hide-sm" style="color:var(--muted)">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
+      <td class="hide-sm" style="color:var(--muted);text-align:right">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
     </tr>`;
   }
 
@@ -1320,12 +1320,12 @@ function renderTable() {
     <thead><tr>
       <th>圖示</th>
       <th class="sort${nameCls}" onclick="setSort('zh')">名稱</th>
-      <th>類型</th>
-      <th>顏色</th>
-      <th>Lv/Q</th>
-      <th class="sort val-price${sortKey==='divineValue'?(sortDir==='asc'?' sort-asc':' sort-desc'):''}" onclick="setSort('divineValue')">神聖石 / 混沌石</th>
+      <th style="text-align:center">類型</th>
+      <th style="text-align:center">顏色</th>
+      <th style="text-align:right"><span class="lvq-lv">LV</span><span class="lvq-sep"> / </span><span class="lvq-q">Q</span></th>
+      <th class="sort val-price${sortKey==='divineValue'?(sortDir==='asc'?' sort-asc':' sort-desc'):''}" onclick="setSort('divineValue')"><span class="val-divine">神聖石</span><img src="image/Divine_Orb_inventory_icon.png" class="orb-icon" style="opacity:.6"><span class="price-sep"> / </span><span class="val-chaos" style="min-width:80px">混沌石</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" style="opacity:.6"></th>
       <th style="text-align:right">最近 7 天</th>
-      <th class="hide-sm">上架數</th>
+      <th class="hide-sm" style="text-align:right">上架數</th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;

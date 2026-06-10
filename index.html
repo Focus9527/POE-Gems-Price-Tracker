@@ -289,6 +289,11 @@
       <button class="fbtn"        data-t="Transfigured"     onclick="setType(this)">變異</button>
       <button class="fbtn"        data-t="Vaal"             onclick="setType(this)">瓦爾</button>
     </div>
+    <div class="btn-group" id="corruptGroup" style="margin-left:8px;padding-left:12px;border-left:1px solid var(--border)">
+      <button class="fbtn active" data-co="All" onclick="setCorrupt(this)">全部</button>
+      <button class="fbtn"        data-co="yes" onclick="setCorrupt(this)">汙染</button>
+      <button class="fbtn"        data-co="no"  onclick="setCorrupt(this)">未汙染</button>
+    </div>
     <div class="btn-group" id="supportGroup" style="margin-left:8px;padding-left:12px;border-left:1px solid var(--border)">
       <button class="fbtn active" data-s="All"     onclick="setSupport(this)">全部</button>
       <button class="fbtn"        data-s="support" onclick="setSupport(this)">輔助</button>
@@ -1127,7 +1132,7 @@ const GL = {
 // ════════════════════════════════════════════
 let allGems = [], filteredGems = [], nameSet = new Set();
 let currentLeague = '';
-let typeFilter = 'All', colorFilter = 'All', supportFilter = 'All', searchQuery = '';
+let typeFilter = 'All', colorFilter = 'All', supportFilter = 'All', corruptFilter = 'All', searchQuery = '';
 let levelFilter = 'All', qualityFilter = 'All';
 let showLowConf = false;
 let sortKey = 'divineValue', sortDir = 'desc';
@@ -1221,6 +1226,8 @@ function applyFilters() {
     // color
     if (colorFilter !== 'All' && g.color !== colorFilter) return false;
     // support
+    if (corruptFilter === 'yes' && !g.corrupted) return false;
+    if (corruptFilter === 'no'  &&  g.corrupted) return false;
     if (supportFilter === 'support' && !g.isSupport) return false;
     if (supportFilter === 'active'  &&  g.isSupport) return false;
     // level / quality
@@ -1300,6 +1307,7 @@ function renderTable() {
         </div>
       </td>
       <td><span class="badge badge-${g.gemType}">${TYPE_ZH[g.gemType]||g.gemType}</span></td>
+      <td style="text-align:center">${g.corrupted ? '<span style="color:var(--corrupted)">✦</span>' : '<span style="color:var(--muted)">—</span>'}</td>
       <td><span class="color-dot ${dotCls}" style="width:11px;height:11px;margin-right:7px"></span>${COLOR_ZH[g.color]||g.color}</td>
       <td class="val-lvq"><span class="lvq-lv">${g.gemLevel??'—'}</span><span class="lvq-sep"> / </span><span class="lvq-q">${g.gemQuality!=null ? g.gemQuality : '—'}</span></td>
       <td class="val-price">
@@ -1321,6 +1329,7 @@ function renderTable() {
       <th>圖示</th>
       <th class="sort${nameCls}" onclick="setSort('zh')">名稱</th>
       <th style="text-align:center">類型</th>
+      <th style="text-align:center">腐化</th>
       <th style="text-align:center">顏色</th>
       <th style="text-align:right"><span class="lvq-lv">LV</span><span class="lvq-sep"> / </span><span class="lvq-q">Q</span></th>
       <th class="sort val-price${sortKey==='divineValue'?(sortDir==='asc'?' sort-asc':' sort-desc'):''}" onclick="setSort('divineValue')"><span class="val-divine">神聖石</span><img src="image/Divine_Orb_inventory_icon.png" class="orb-icon" style="opacity:.6"><span class="price-sep"> / </span><span class="val-chaos" style="min-width:80px">混沌石</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" style="opacity:.6"></th>
@@ -1384,6 +1393,11 @@ function setLevel(btn) {
 function setQuality(btn) {
   qualityFilter = btn.dataset.q;
   document.querySelectorAll('#qualityGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
+  currentPage = 1; applyFilters();
+}
+function setCorrupt(btn) {
+  corruptFilter = btn.dataset.co;
+  document.querySelectorAll('#corruptGroup .fbtn').forEach(b => b.classList.toggle('active', b===btn));
   currentPage = 1; applyFilters();
 }
 function setSupport(btn) {

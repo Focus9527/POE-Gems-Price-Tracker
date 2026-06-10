@@ -153,8 +153,10 @@
     .lvq-sep    { color: var(--border); margin: 0 3px; }
     .lvq-q      { display:inline-block; min-width:24px; text-align:right; font-variant-numeric: tabular-nums; }
     .orb-icon { width:18px; height:18px; vertical-align:middle; margin-left:5px; }
-    .medium-conf { color: #f0b429; font-size: 1em; margin-right: 3px; cursor:default; title:"Medium Confidence（樣本數 5–9）"; }
+    .medium-conf { color: #f0b429; font-size: 1em; margin-right: 3px; cursor:default; }
     .medium-conf::before { content: '⚠ '; }
+    .low-conf    { color: #e05252; font-size: 1em; margin-right: 3px; cursor:default; }
+    .low-conf::before    { content: '⚠ '; }
     .val-chaos  { color: var(--text); }
     .corrupted  { color: var(--corrupted); font-weight: 700; }
     .not-corr   { color: var(--muted); }
@@ -1301,7 +1303,7 @@ function renderTable() {
       <td><span class="color-dot ${dotCls}" style="width:11px;height:11px;margin-right:7px"></span>${COLOR_ZH[g.color]||g.color}</td>
       <td class="val-lvq"><span class="lvq-lv">${g.gemLevel??'—'}</span><span class="lvq-sep"> / </span><span class="lvq-q">${g.gemQuality!=null ? g.gemQuality : '—'}</span></td>
       <td class="val-price">
-        ${g.mediumConf?'<span class="medium-conf" title="Medium Confidence（樣本數 5–9）"></span>':''}
+        ${g.lowConf?'<span class="low-conf" title="Low Confidence（樣本數 < 5）"></span>':g.mediumConf?'<span class="medium-conf" title="Medium Confidence（樣本數 5–9）"></span>':''}
         <span class="val-divine">${div}</span><img src="image/Divine_Orb_inventory_icon.png" class="orb-icon" title="神聖石">
         <span class="price-sep"> / </span>
         <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
@@ -1439,7 +1441,7 @@ function renderCards() {
     const dotCls  = `dot-${g.color==='white'?'white':g.color}`;
     const zhSafe  = g.zh.replace(/'/g, '&#39;');
     const lvq     = `${g.gemLevel??'—'}/${g.gemQuality!=null?g.gemQuality:'—'}`;
-    const medMark = g.mediumConf ? '<span class="medium-conf" title="Medium Confidence"></span>' : '';
+    const medMark = g.lowConf ? '<span class="low-conf" title="Low Confidence（樣本數 < 5）"></span>' : g.mediumConf ? '<span class="medium-conf" title="Medium Confidence（樣本數 5–9）"></span>' : '';
     return `
     <div class="gem-card">
       <div class="gem-card-top">

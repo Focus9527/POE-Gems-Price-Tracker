@@ -53,6 +53,12 @@
       padding: 10px 40px; display: flex; flex-direction: column; gap: 8px;
       position: sticky; top: 50px; z-index: 190;
     }
+    .reset-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); padding: 3px 12px; border-radius: 20px;
+      font-size: .82rem; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .reset-btn:hover { border-color: var(--red); color: var(--red); }
     .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .filter-label { font-size: .92rem; color: var(--muted); min-width: 42px; }
     .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -280,6 +286,9 @@
 
 <!-- FILTERS -->
 <div class="filters" id="filtersPanel">
+  <div class="filter-row">
+    <button class="reset-btn" onclick="resetFilters()" title="重置所有篩選條件">✕ 重置</button>
+  </div>
   <div class="filter-row">
     <span class="filter-label">類型</span>
     <div class="btn-group" id="typeGroup">
@@ -1509,6 +1518,22 @@ function renderCards() {
   }).join('');
 }
 
+function resetFilters() {
+  typeFilter = 'All'; colorFilter = 'All'; supportFilter = 'All';
+  corruptFilter = 'All'; levelFilter = 'All'; qualityFilter = 'All';
+  searchQuery = ''; showLowConf = false;
+
+  // 重置所有按鈕 active 狀態
+  ['typeGroup','corruptGroup','supportGroup','levelGroup','qualityGroup','colorGroup'].forEach(id => {
+    document.querySelectorAll(`#${id} .fbtn`).forEach((b,i) => b.classList.toggle('active', i===0));
+  });
+  document.getElementById('lowConfBtn').classList.remove('active');
+  document.getElementById('searchInput').value = '';
+  const ms = document.getElementById('mobileSearch');
+  if (ms) ms.value = '';
+
+  currentPage = 1; applyFilters();
+}
 function toggleFilters() {
   const panel = document.getElementById('filtersPanel');
   const btn   = document.getElementById('filterToggleBtn');

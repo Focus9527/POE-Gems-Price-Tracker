@@ -181,6 +181,15 @@
     .pg-btn:disabled { opacity: .35; cursor: default; }
     .pg-dots { color: var(--muted); padding: 0 4px; }
 
+    /* ── FOOTER ── */
+    .site-footer {
+      text-align: center; padding: 16px 40px; font-size: .78rem; color: var(--muted);
+      border-top: 1px solid var(--border); margin-top: 8px; line-height: 1.8;
+    }
+    .site-footer a { color: var(--muted); text-decoration: underline; }
+    .site-footer a:hover { color: var(--gold); }
+    .footer-sep { margin: 0 8px; opacity: .4; }
+
     /* ── LOADING / EMPTY ── */
     .center-msg { display: flex; align-items: center; justify-content: center; padding: 60px 20px; color: var(--muted); font-size: 1rem; gap: 10px; }
     .spinner { width: 22px; height: 22px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin .75s linear infinite; }
@@ -362,6 +371,14 @@
 
 <!-- PAGINATION -->
 <div class="pagination" id="pagination"></div>
+
+<footer class="site-footer">
+  <span>資料來源：<a href="https://poe.ninja" target="_blank" rel="noopener">poe.ninja</a></span>
+  <span class="footer-sep">｜</span>
+  <span>本站為非官方社群工具，與 poe.ninja 及 Grinding Gear Games 無從屬關係</span>
+  <span class="footer-sep">｜</span>
+  <span>Path of Exile © Grinding Gear Games</span>
+</footer>
 
 <script>
 // ════════════════════════════════════════════

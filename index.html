@@ -285,7 +285,7 @@
       <button class="fbtn"        data-t="Non-transfigured" onclick="setType(this)">非變異</button>
       <button class="fbtn"        data-t="Normal"           onclick="setType(this)">一般</button>
       <button class="fbtn"        data-t="Transfigured"     onclick="setType(this)">變異</button>
-      <button class="fbtn"        data-t="Vaal"             onclick="setType(this)">汙染</button>
+      <button class="fbtn"        data-t="Vaal"             onclick="setType(this)">瓦爾</button>
     </div>
     <div class="btn-group" id="supportGroup" style="margin-left:8px;padding-left:12px;border-left:1px solid var(--border)">
       <button class="fbtn active" data-s="All"     onclick="setSupport(this)">全部</button>
@@ -1254,7 +1254,7 @@ function applyFilters() {
 // ════════════════════════════════════════════
 // RENDER TABLE
 // ════════════════════════════════════════════
-const TYPE_ZH  = { Awakened:'覺醒', Vaal:'汙染', Transfigured:'變異', Normal:'一般' };
+const TYPE_ZH  = { Awakened:'覺醒', Vaal:'瓦爾', Transfigured:'變異', Normal:'一般' };
 const COLOR_ZH = { red:'力量', green:'敏捷', blue:'智慧', white:'通用' };
 
 function thHtml(label, key) {
@@ -1322,7 +1322,7 @@ function renderTable() {
       <th>顏色</th>
       <th>Lv/Q</th>
       <th class="sort val-price${sortKey==='divineValue'?(sortDir==='asc'?' sort-asc':' sort-desc'):''}" onclick="setSort('divineValue')">神聖石 / 混沌石</th>
-      <th>最近 7 天</th>
+      <th style="text-align:right">最近 7 天</th>
       <th class="hide-sm">上架數</th>
     </tr></thead>
     <tbody>${rows}</tbody>

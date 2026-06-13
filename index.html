@@ -1359,6 +1359,13 @@ function applyFilters() {
 // RENDER TABLE
 // ════════════════════════════════════════════
 const TYPE_ZH  = { Awakened:'覺醒', Vaal:'瓦爾', Transfigured:'變異', Normal:'一般', Exceptional:'卓越' };
+
+function fmtListing(n) {
+  if (n == null) return '—';
+  if (n < 5)   return String(n);
+  if (n < 10)  return '<10';
+  return '~' + Math.round(n / 10) * 10;
+}
 const COLOR_ZH = { red:'力量', green:'敏捷', blue:'智慧', white:'通用' };
 
 function thHtml(label, key) {
@@ -1413,7 +1420,7 @@ function renderTable() {
         <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
       </td>
       <td class="val-trend" style="text-align:right">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="hide-sm" style="color:var(--muted);text-align:right">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
+      <td class="hide-sm" style="color:var(--muted);text-align:right">${fmtListing(g.listingCount)}</td>
     </tr>`;
   }
 
@@ -1580,7 +1587,7 @@ function renderCards() {
         </div>
         <div class="gem-card-right">
           ${tHtml || ''}
-          <span>~${g.listingCount!=null?Math.round(g.listingCount/10)*10:'—'} 筆</span>
+          <span>${fmtListing(g.listingCount)} 筆</span>
         </div>
       </div>
     </div>`;
@@ -1794,7 +1801,7 @@ function renderImbuedTable() {
         <span class="val-chaos">${chaos}</span><img src="image/Chaos_Orb_inventory_icon.png" class="orb-icon" title="混沌石">
       </td>
       <td class="val-trend" style="text-align:right">${tHtml || '<span style="color:var(--muted)">—</span>'}</td>
-      <td class="hide-sm" style="color:var(--muted);text-align:right">${g.listingCount!=null ? '~'+Math.round(g.listingCount/10)*10 : '—'}</td>
+      <td class="hide-sm" style="color:var(--muted);text-align:right">${fmtListing(g.listingCount)}</td>
     </tr>`;
   }
 
@@ -1868,7 +1875,7 @@ function renderImbuedCards() {
         </div>
         <div class="gem-card-right">
           ${tHtml || ''}
-          <span>~${g.listingCount!=null?Math.round(g.listingCount/10)*10:'—'} 筆</span>
+          <span>${fmtListing(g.listingCount)} 筆</span>
         </div>
       </div>
     </div>`;

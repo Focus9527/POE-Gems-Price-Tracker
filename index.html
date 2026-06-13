@@ -1362,8 +1362,8 @@ const TYPE_ZH  = { Awakened:'覺醒', Vaal:'瓦爾', Transfigured:'變異', Norm
 
 function fmtListing(n) {
   if (n == null) return '—';
-  if (n < 5)   return String(n);
-  if (n < 10)  return '<10';
+  if (n < 2)  return '~1';
+  if (n < 10) return '~5';
   return '~' + Math.round(n / 10) * 10;
 }
 const COLOR_ZH = { red:'力量', green:'敏捷', blue:'智慧', white:'通用' };

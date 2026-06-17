@@ -348,7 +348,7 @@
       <span class="filter-label" style="margin-left:16px">品質</span>
       <div class="btn-group" id="qualityGroup">
         <button class="fbtn active" data-q="All"  onclick="setQuality(this)">全部</button>
-        <button class="fbtn"        data-q="low"  onclick="setQuality(this)">0~19</button>
+        <button class="fbtn"        data-q="low"  onclick="setQuality(this)">0~19%</button>
         <button class="fbtn"        data-q="20"   onclick="setQuality(this)">20%</button>
         <button class="fbtn"        data-q="23"   onclick="setQuality(this)">23%</button>
       </div>
@@ -1261,16 +1261,18 @@ async function apiFetch(poeNinjaPath) {
 }
 
 async function fetchLeagues() {
-  try {
-    const d = await apiFetch('/poe1/api/data/index-state');
-    const leagues = d.economyLeagues || [];
-    const sel = document.getElementById('leagueSelect');
-    sel.innerHTML = leagues.map(l =>
-      `<option value="${l.name}">${l.displayName || l.name}</option>`
-    ).join('');
-    currentLeague = leagues[0]?.name || 'Mirage';
-    sel.value = currentLeague;
-  } catch(e) { console.error('League fetch failed', e); }
+  const leagues = [
+    { name: 'Mirage',           displayName: 'Mirage' },
+    { name: 'Hardcore Mirage',  displayName: 'Hardcore Mirage' },
+    { name: 'Standard',         displayName: 'Standard' },
+    { name: 'Hardcore',         displayName: 'Hardcore' },
+  ];
+  const sel = document.getElementById('leagueSelect');
+  sel.innerHTML = leagues.map(l =>
+    `<option value="${l.name}">${l.displayName}</option>`
+  ).join('');
+  currentLeague = leagues[0].name;
+  sel.value = currentLeague;
 }
 
 async function loadGems() {
@@ -1303,7 +1305,6 @@ allGems = d.lines.map(g => {
          <span style="font-size:1.4rem">⚠️</span>
          <span>載入失敗</span>
          <span style="font-size:.78rem;color:var(--muted)">錯誤：${e.name} — ${e.message}</span>
-         <span style="font-size:.72rem;color:var(--muted)">請開啟 F12 → Console 查看詳細錯誤</span>
        </div>`;
     console.error('[loadGems error]', e);
   }

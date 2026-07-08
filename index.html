@@ -1261,19 +1261,20 @@ async function apiFetch(poeNinjaPath) {
 }
 
 async function fetchLeagues() {
-  const leagues = [
-	{ name: 'Ancestors',           displayName: 'Ancestors' },
-    { name: 'Mirage',           displayName: 'Mirage' },
-    { name: 'Hardcore Mirage',  displayName: 'Hardcore Mirage' },
-    { name: 'Standard',         displayName: 'Standard' },
-    { name: 'Hardcore',         displayName: 'Hardcore' },
-  ];
-  const sel = document.getElementById('leagueSelect');
-  sel.innerHTML = leagues.map(l =>
-    `<option value="${l.name}">${l.displayName}</option>`
-  ).join('');
-  currentLeague = leagues[0].name;
-  sel.value = currentLeague;
+  try {
+    const leagues = await apiFetch('/poe1/api/economy/leagues');
+    const sel = document.getElementById('leagueSelect');
+    sel.innerHTML = leagues.map(l =>
+      `<option value="${l.id}">${l.name}</option>`
+    ).join('');
+    currentLeague = leagues[0]?.id || 'Standard';
+    sel.value = currentLeague;
+  } catch(e) {
+    console.error('League fetch failed', e);
+    const sel = document.getElementById('leagueSelect');
+    sel.innerHTML = '<option value="Standard">Standard</option>';
+    currentLeague = 'Standard';
+  }
 }
 
 async function loadGems() {
